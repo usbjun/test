@@ -1,10 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
+import { Session } from '@supabase/supabase-js';
 import {
   Product, CellDataMap, CellDataEntry,
   PopupState, TooltipState,
   ScheduleValue, StatusFilter, ViewMode,
 } from './types';
 import * as api from './lib/api';
+import { supabase } from './lib/supabase';
+import { signOut } from './lib/auth';
+import LoginPage from './components/LoginPage';
 import Header from './components/Header';
 import LegendBar from './components/LegendBar';
 import ControlsBar from './components/ControlsBar';
@@ -25,6 +29,18 @@ function computeStatus(schedule: ScheduleValue[]) {
 }
 
 export default function App() {
+  // ── 認証 ───────────────────────────────────────────────────
+  const [session, setSession] = useState<Session | null | undefined>(undefined); // undefined = 確認中
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ── アプリデータ ─────────────────────────────────────────
   const [products, setProducts] = useState<Product[]>([]);
   const [cellData, setCellData] = useState<CellDataMap>({});
   const [loading, setLoading] = useState(true);
@@ -37,8 +53,9 @@ export default function App() {
   const [popup, setPopup] = useState<PopupState | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-  // ── 初回データ取得 ──────────────────────────────────────────
   useEffect(() => {
+    if (!session) return;
+    setLoading(true);
     (async () => {
       try {
         const [prods, cells] = await Promise.all([
@@ -53,14 +70,12 @@ export default function App() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [session]);
 
-  // ── セルデータ取得 ──────────────────────────────────────────
   const getCellData = useCallback((pid: number, mi: number): CellDataEntry => {
     return cellData[`${pid}_${mi}`] || { arrival: 0, sold: 0 };
   }, [cellData]);
 
-  // ── フィルタリング ──────────────────────────────────────────
   const filteredProducts = products.filter(p => {
     const q = searchQuery.toLowerCase();
     if (q && !p.name.toLowerCase().includes(q)) return false;
@@ -85,23 +100,14 @@ export default function App() {
     none: countsBase.filter(p => p.status === 'none').length,
   };
 
-  // ── CRUD ハンドラー（楽観的更新 → DB同期）─────────────────
-
   async function handleArrivalChange(pid: number, val: string) {
     const clean = val.replace(/[,，—]/g, '').trim();
     const num = parseInt(clean, 10);
     const arrival = isNaN(num) ? 0 : num;
-
-    // 楽観的更新
     setProducts(prev => prev.map(p => p.id === pid ? { ...p, arrival } : p));
-
     try {
       await api.updateArrival(pid, arrival);
     } catch {
-      // ロールバック
-      setProducts(prev => prev.map(p =>
-        p.id === pid ? { ...p, arrival: products.find(x => x.id === pid)?.arrival ?? 0 } : p
-      ));
       alert('入荷数の保存に失敗しました');
     }
   }
@@ -111,20 +117,15 @@ export default function App() {
     const { pid, mi } = popup;
     const target = products.find(p => p.id === pid);
     if (!target) return;
-
     const newSchedule = [...target.schedule] as ScheduleValue[];
     newSchedule[mi] = val;
     const newStatus = computeStatus(newSchedule);
-
-    // 楽観的更新
     setProducts(prev => prev.map(p =>
       p.id === pid ? { ...p, schedule: newSchedule, status: newStatus } : p
     ));
-
     try {
       await api.updateScheduleCell(pid, newSchedule);
     } catch {
-      // ロールバック
       setProducts(prev => prev.map(p =>
         p.id === pid ? { ...p, schedule: target.schedule, status: target.status } : p
       ));
@@ -136,10 +137,7 @@ export default function App() {
     if (!popup) return;
     const { pid, mi } = popup;
     const key = `${pid}_${mi}`;
-
-    // 楽観的更新
     setCellData(prev => ({ ...prev, [key]: data }));
-
     try {
       await api.upsertCellData(pid, mi, data);
     } catch {
@@ -147,23 +145,26 @@ export default function App() {
     }
   }
 
-  // ── イベントハンドラー ──────────────────────────────────────
-
   function handleCellClick(pid: number, mi: number, x: number, y: number) {
     setTooltip(null);
     setPopup({ pid, mi, x, y });
   }
 
-  function handleTooltip(pid: number, mi: number, x: number, y: number) {
-    setTooltip({ pid, mi, x, y });
+  // ── セッション確認中 ────────────────────────────────────
+  if (session === undefined) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--text-muted)', fontFamily: 'sans-serif' }}>
+        <div>読み込み中…</div>
+      </div>
+    );
   }
 
-  function handleTooltipMove(x: number, y: number) {
-    setTooltip(prev => prev ? { ...prev, x, y } : null);
+  // ── 未ログイン → ログインページ ────────────────────────
+  if (!session) {
+    return <LoginPage />;
   }
 
-  // ── ローディング / エラー ───────────────────────────────────
-
+  // ── データ読み込み中 ─────────────────────────────────────
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 16, fontFamily: 'sans-serif', color: 'var(--text-muted)' }}>
@@ -178,17 +179,19 @@ export default function App() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 16, fontFamily: 'sans-serif', color: 'var(--red)' }}>
         <div style={{ fontSize: 32 }}>⚠️</div>
         <div style={{ fontWeight: 700 }}>接続エラー</div>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 400, textAlign: 'center' }}>{error}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>.env.local の Supabase 設定を確認してください</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{error}</div>
       </div>
     );
   }
 
-  // ── メイン画面 ──────────────────────────────────────────────
-
+  // ── メイン画面 ──────────────────────────────────────────
   return (
     <div className="wrapper">
-      <Header skuCount={products.length} />
+      <Header
+        skuCount={products.length}
+        userEmail={session.user.email ?? ''}
+        onLogout={signOut}
+      />
       <LegendBar />
       <ControlsBar
         searchQuery={searchQuery}
@@ -208,8 +211,8 @@ export default function App() {
             monthFilter={monthFilter}
             getCellData={getCellData}
             onCellClick={handleCellClick}
-            onTooltip={handleTooltip}
-            onTooltipMove={handleTooltipMove}
+            onTooltip={(pid, mi, x, y) => setTooltip({ pid, mi, x, y })}
+            onTooltipMove={(x, y) => setTooltip(prev => prev ? { ...prev, x, y } : null)}
             onTooltipHide={() => setTooltip(null)}
             onArrivalChange={handleArrivalChange}
           />
@@ -219,8 +222,8 @@ export default function App() {
             monthFilter={monthFilter}
             getCellData={getCellData}
             onCellClick={handleCellClick}
-            onTooltip={handleTooltip}
-            onTooltipMove={handleTooltipMove}
+            onTooltip={(pid, mi, x, y) => setTooltip({ pid, mi, x, y })}
+            onTooltipMove={(x, y) => setTooltip(prev => prev ? { ...prev, x, y } : null)}
             onTooltipHide={() => setTooltip(null)}
           />
         )}
