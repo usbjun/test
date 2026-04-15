@@ -684,6 +684,69 @@ td.arrival-col-td.zero { color: var(--text-muted); }
 }
 .excel-upload-btn:hover { background: var(--surface3); }
 
+/* ── 共通モーダル ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 4000;
+  background: rgba(0,0,0,0.38);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.modal-box {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.modal-title {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 16px; font-weight: 900; color: var(--text);
+}
+.modal-close {
+  background: none; border: none; font-size: 18px;
+  color: var(--text-muted); cursor: pointer; line-height: 1;
+  padding: 2px 6px; border-radius: 4px;
+  transition: color 0.1s;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body {
+  padding: 18px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-footer {
+  padding: 12px 22px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 10px;
+  flex-shrink: 0;
+}
+.modal-btn-cancel {
+  padding: 9px 18px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  font-size: 13px; color: var(--text-muted);
+  cursor: pointer; font-family: inherit;
+  transition: background 0.1s;
+}
+.modal-btn-cancel:hover:not(:disabled) { background: var(--surface3); }
+.modal-btn-cancel:disabled { opacity: 0.5; cursor: default; }
+.modal-btn-add {
+  padding: 9px 20px; border-radius: 8px; border: none;
+  background: var(--blue); color: #fff;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: opacity 0.1s;
+}
+.modal-btn-add:hover:not(:disabled) { opacity: 0.87; }
+.modal-btn-add:disabled { opacity: 0.45; cursor: default; }
+
 /* ── Excel アップロードモーダル ── */
 .excel-upload-modal { max-width: 680px; width: 95vw; }
 .excel-format-note {
