@@ -112,6 +112,11 @@ export async function upsertCellData(
   if (error) throw error;
 }
 
+export async function updateProductName(id: number, name: string): Promise<void> {
+  const { error } = await supabase.from('products').update({ name }).eq('id', id);
+  if (error) throw error;
+}
+
 export async function deleteProduct(id: number): Promise<void> {
   const { error } = await supabase.from('products').delete().eq('id', id);
   if (error) throw error;

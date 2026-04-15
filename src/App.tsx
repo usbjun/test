@@ -127,6 +127,16 @@ export default function App() {
     api.updateCategory(pid, category).catch(() => alert('カテゴリの保存に失敗しました'));
   }
 
+  async function handleRenameProduct(pid: number, name: string) {
+    setProducts(prev => prev.map(p => p.id === pid ? { ...p, name } : p));
+    api.updateProductName(pid, name).catch(() => alert('商品名の保存に失敗しました'));
+  }
+
+  async function handleDeleteProduct(pid: number) {
+    setProducts(prev => prev.filter(p => p.id !== pid));
+    api.deleteProduct(pid).catch(() => alert('商品の削除に失敗しました'));
+  }
+
   async function handleSelectIcon(val: ScheduleValue) {
     if (!popup) return;
     const { pid, mi } = popup;
@@ -257,6 +267,8 @@ export default function App() {
             onTooltipHide={() => setTooltip(null)}
             onArrivalChange={handleArrivalChange}
             onCategoryChange={handleCategoryChange}
+            onRenameProduct={handleRenameProduct}
+            onDeleteProduct={handleDeleteProduct}
             bulkStatusActive={bulkStatusValue !== undefined}
             bulkCategoryValue={bulkCategoryValue}
             onBulkCategoryApply={handleBulkCategoryApply}

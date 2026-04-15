@@ -361,11 +361,14 @@ table {
 }
 thead tr {
   background: var(--surface2);
+}
+/* sticky は th に直接付ける（tr への sticky は一部ブラウザ非対応） */
+thead .sticky-th {
   position: sticky;
-  top: 0;
   z-index: 10;
 }
-thead .year-row th {
+thead .year-th {
+  top: 64px; /* app header の高さ分オフセット */
   background: var(--surface3);
   font-size: 10px;
   font-weight: 700;
@@ -376,7 +379,9 @@ thead .year-row th {
   border-bottom: 1px solid var(--border);
   text-transform: uppercase;
 }
-thead .month-row th {
+thead .month-th {
+  top: 90px; /* 64px header + 26px year-row */
+  background: var(--surface2);
   padding: 8px 4px;
   text-align: center;
   font-size: 11px;
@@ -386,14 +391,16 @@ thead .month-row th {
   white-space: nowrap;
   min-width: 42px;
 }
-thead .month-row th.product-col {
+thead .month-row th.product-col,
+thead th.product-col {
   text-align: left;
   padding-left: 16px;
   min-width: 250px;
   max-width: 350px;
   color: var(--text);
 }
-thead .month-row th.arrival-col {
+thead .month-row th.arrival-col,
+thead th.arrival-col {
   min-width: 80px;
   border-right: 2px solid var(--border);
 }
@@ -728,6 +735,130 @@ td.arrival-col-td.zero { color: var(--text-muted); }
 }
 
 /* ── ドラッグハンドル ── */
+/* 歯車ボタン */
+.product-settings-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.1s, background 0.1s;
+}
+.product-settings-btn:hover {
+  color: var(--blue);
+  background: var(--surface3);
+}
+.product-row:hover .product-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 商品設定ポップアップ */
+.product-settings-popup {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+  min-width: 240px;
+  padding: 0;
+  overflow: hidden;
+}
+.settings-popup-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.settings-section { padding: 12px 16px; }
+.settings-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.settings-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.settings-input:focus { border-color: var(--blue); }
+.settings-btn-save {
+  padding: 5px 14px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.1s;
+}
+.settings-btn-save:hover { opacity: 0.85; }
+.settings-btn-cancel {
+  padding: 5px 14px;
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.settings-btn-cancel:hover { background: var(--surface3); }
+.settings-btn-delete {
+  padding: 5px 14px;
+  background: none;
+  color: var(--red);
+  border: 1px solid var(--red);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  transition: background 0.1s;
+}
+.settings-btn-delete:hover { background: rgba(227,53,13,0.06); }
+.settings-divider { height: 1px; background: var(--border); }
+.settings-confirm-text {
+  font-size: 12px;
+  color: var(--red);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.settings-btn-delete-confirm {
+  padding: 5px 14px;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.1s;
+}
+.settings-btn-delete-confirm:hover { opacity: 0.85; }
+
 .drag-handle {
   display: flex; align-items: center; justify-content: center;
   width: 28px; height: 100%; min-height: 32px;
