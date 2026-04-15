@@ -831,6 +831,20 @@ td.arrival-col-td.zero { color: var(--text-muted); }
   transition: background 0.1s;
 }
 .settings-btn-cancel:hover { background: var(--surface3); }
+.settings-btn-clear {
+  padding: 5px 14px;
+  background: none;
+  color: var(--maybe);
+  border: 1px solid var(--maybe);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  transition: background 0.1s;
+}
+.settings-btn-clear:hover { background: rgba(180,83,9,0.06); }
 .settings-btn-delete {
   padding: 5px 14px;
   background: none;

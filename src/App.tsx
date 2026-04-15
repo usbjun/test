@@ -136,6 +136,14 @@ export default function App() {
     api.deleteProduct(pid).catch(() => alert('商品の削除に失敗しました'));
   }
 
+  async function handleClearCells(pid: number) {
+    const emptySchedule = Array(26).fill(null) as ScheduleValue[];
+    setProducts(prev => prev.map(p =>
+      p.id === pid ? { ...p, schedule: emptySchedule, status: 'none' } : p
+    ));
+    api.updateScheduleCell(pid, emptySchedule).catch(() => alert('セルのクリアに失敗しました'));
+  }
+
   async function handleSelectIcon(val: ScheduleValue) {
     if (!popup) return;
     const { pid, mi } = popup;
@@ -267,6 +275,7 @@ export default function App() {
             onCategoryChange={handleCategoryChange}
             onRenameProduct={handleRenameProduct}
             onDeleteProduct={handleDeleteProduct}
+            onClearCells={handleClearCells}
             bulkStatusActive={bulkStatusValue !== undefined}
             bulkCategoryValue={bulkCategoryValue}
             onBulkCategoryApply={handleBulkCategoryApply}

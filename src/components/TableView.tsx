@@ -18,6 +18,7 @@ interface TableViewProps {
   onCategoryChange: (pid: number, category: string) => void;
   onRenameProduct: (pid: number, name: string) => void;
   onDeleteProduct: (pid: number) => void;
+  onClearCells: (pid: number) => void;
   bulkStatusActive: boolean;
   bulkCategoryValue: string | undefined;
   onBulkCategoryApply: (pid: number) => void;
@@ -35,7 +36,7 @@ interface SettingsState {
 export default function TableView({
   products, allCategories, monthFilter,
   getCellData, onCellClick, onTooltip, onTooltipMove, onTooltipHide,
-  onArrivalChange, onCategoryChange, onRenameProduct, onDeleteProduct,
+  onArrivalChange, onCategoryChange, onRenameProduct, onDeleteProduct, onClearCells,
   bulkStatusActive, bulkCategoryValue, onBulkCategoryApply,
   onReorder, sortBy,
 }: TableViewProps) {
@@ -286,6 +287,16 @@ export default function TableView({
                 <button className="settings-btn-save" onClick={commitRename}>保存</button>
                 <button className="settings-btn-cancel" onClick={closeSettings}>キャンセル</button>
               </div>
+            </div>
+
+            <div className="settings-divider" />
+
+            {/* セルクリア */}
+            <div className="settings-section">
+              <button
+                className="settings-btn-clear"
+                onClick={() => { onClearCells(settings.id); closeSettings(); }}
+              >スケジュールをすべてクリア</button>
             </div>
 
             <div className="settings-divider" />
