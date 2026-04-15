@@ -4,6 +4,13 @@ interface HeaderProps {
   onLogout: () => void;
 }
 
+const LEGEND_ITEMS = [
+  { chip: '○', label: '在庫あり / 入荷予定', bg: 'var(--ok-bg)', color: 'var(--ok)', border: 'rgba(74,222,128,0.3)' },
+  { chip: '△', label: '少量 / 未定',         bg: 'var(--maybe-bg)', color: 'var(--maybe)', border: 'rgba(250,204,21,0.3)' },
+  { chip: '?', label: '確認中',               bg: 'var(--unknown-bg)', color: 'var(--unknown)', border: 'rgba(96,165,250,0.3)' },
+  { chip: '—', label: 'なし',                 bg: 'var(--none-bg)', color: 'var(--text-muted)', border: 'var(--border)' },
+];
+
 export default function Header({ skuCount, userEmail, onLogout }: HeaderProps) {
   return (
     <header>
@@ -13,6 +20,20 @@ export default function Header({ skuCount, userEmail, onLogout }: HeaderProps) {
           再入荷在庫管理
           <span>Restock Inventory Chart</span>
         </div>
+
+        {/* 凡例（中央） */}
+        <div className="header-legend">
+          {LEGEND_ITEMS.map(item => (
+            <div key={item.chip} className="header-legend-item">
+              <div className="header-legend-chip" style={{
+                background: item.bg, color: item.color,
+                border: `1px solid ${item.border}`,
+              }}>{item.chip}</div>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+
         <div className="header-controls">
           <div className="sku-display">
             総SKU数 <strong>{skuCount}</strong>

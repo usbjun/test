@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Product, CellDataEntry, ScheduleValue } from '../types';
 import { MONTHS, getYearSpans } from '../data/products';
@@ -45,6 +45,35 @@ export default function TableView({
   const [settings, setSettings] = useState<SettingsState | null>(null);
   const [settingsInput, setSettingsInput] = useState('');
 
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const topScrollInnerRef = useRef<HTMLDivElement>(null);
+
+  // 上部スクロールバーと本体の幅・位置を同期
+  useEffect(() => {
+    const wrapper = tableWrapperRef.current;
+    const topScroll = topScrollRef.current;
+    const inner = topScrollInnerRef.current;
+    if (!wrapper || !topScroll || !inner) return;
+
+    const syncWidth = () => { inner.style.width = `${wrapper.scrollWidth}px`; };
+    syncWidth();
+    const obs = new ResizeObserver(syncWidth);
+    obs.observe(wrapper);
+
+    let syncing = false;
+    const onTop = () => { if (!syncing) { syncing = true; wrapper.scrollLeft = topScroll.scrollLeft; syncing = false; } };
+    const onTable = () => { if (!syncing) { syncing = true; topScroll.scrollLeft = wrapper.scrollLeft; syncing = false; } };
+    topScroll.addEventListener('scroll', onTop);
+    wrapper.addEventListener('scroll', onTable);
+
+    return () => {
+      obs.disconnect();
+      topScroll.removeEventListener('scroll', onTop);
+      wrapper.removeEventListener('scroll', onTable);
+    };
+  }, []);
+
   if (products.length === 0) {
     return <div className="empty-state"><div className="icon">🔍</div><p>該当する商品が見つかりません</p></div>;
   }
@@ -82,7 +111,11 @@ export default function TableView({
 
   return (
     <>
-      <div className="table-wrapper">
+      {/* 上部スクロールバー */}
+      <div ref={topScrollRef} className="top-scrollbar">
+        <div ref={topScrollInnerRef} style={{ height: 1 }} />
+      </div>
+      <div ref={tableWrapperRef} className="table-wrapper">
         <table>
           <thead>
             <tr className="year-row">

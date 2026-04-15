@@ -9,7 +9,6 @@ import { supabase } from './lib/supabase';
 import { signOut } from './lib/auth';
 import LoginPage from './components/LoginPage';
 import Header from './components/Header';
-import LegendBar from './components/LegendBar';
 import ControlsBar from './components/ControlsBar';
 import MonthFilter from './components/MonthFilter';
 import StatsRow from './components/StatsRow';
@@ -233,7 +232,6 @@ export default function App() {
   return (
     <div className="wrapper">
       <Header skuCount={products.length} userEmail={session.user.email ?? ''} onLogout={signOut} />
-      <LegendBar />
       <ControlsBar
         searchQuery={searchQuery} onSearch={setSearchQuery}
         statusFilter={statusFilter} onStatusFilter={setStatusFilter} counts={counts}
