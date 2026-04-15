@@ -1,11 +1,6 @@
-import { StatusFilter, ViewMode } from '../types';
+import { StatusFilter, ViewMode, ScheduleValue } from '../types';
 
-interface Counts {
-  all: number;
-  has: number;
-  incoming: number;
-  none: number;
-}
+interface Counts { all: number; has: number; incoming: number; none: number; }
 
 interface ControlsBarProps {
   searchQuery: string;
@@ -15,15 +10,35 @@ interface ControlsBarProps {
   counts: Counts;
   currentView: ViewMode;
   onViewChange: (v: ViewMode) => void;
+  categories: string[];
+  categoryFilter: string;
+  onCategoryFilter: (c: string) => void;
+  sortBy: 'default' | 'category';
+  onSortBy: (s: 'default' | 'category') => void;
+  bulkEditValue: ScheduleValue | undefined;
+  onBulkEditToggle: () => void;
+  onAddProduct: () => void;
 }
 
 export default function ControlsBar({
   searchQuery, onSearch,
-  statusFilter, onStatusFilter,
-  counts, currentView, onViewChange,
+  statusFilter, onStatusFilter, counts,
+  currentView, onViewChange,
+  categories, categoryFilter, onCategoryFilter,
+  sortBy, onSortBy,
+  bulkEditValue, onBulkEditToggle,
+  onAddProduct,
 }: ControlsBarProps) {
+  const statusButtons: { key: StatusFilter; label: string }[] = [
+    { key: 'all', label: 'すべて' },
+    { key: 'has', label: '在庫あり' },
+    { key: 'incoming', label: '入荷予定' },
+    { key: 'none', label: '在庫なし' },
+  ];
+
   return (
     <div className="controls-bar">
+      {/* Row 1: 検索・ステータス・追加・一括編集・ビュー */}
       <div className="controls-inner">
         <div className="search-wrapper">
           <span className="search-icon">🔍</span>
@@ -36,35 +51,77 @@ export default function ControlsBar({
           />
         </div>
 
-        {(['all', 'has', 'incoming', 'none'] as StatusFilter[]).map(f => {
-          const labels: Record<StatusFilter, string> = {
-            all: 'すべて', has: '在庫あり', incoming: '入荷予定', none: '在庫なし',
-          };
-          return (
-            <button
-              key={f}
-              className={`filter-btn${statusFilter === f ? ' active' : ''}`}
-              onClick={() => onStatusFilter(f)}
-              style={f === 'all' ? { fontWeight: 700 } : undefined}
-            >
-              {labels[f]} <span className="count">{counts[f]}</span>
-            </button>
-          );
-        })}
+        {statusButtons.map(({ key, label }) => (
+          <button
+            key={key}
+            className={`filter-btn${statusFilter === key ? ' active' : ''}`}
+            onClick={() => onStatusFilter(key)}
+            style={key === 'all' ? { fontWeight: 700 } : undefined}
+          >
+            {label} <span className="count">{counts[key]}</span>
+          </button>
+        ))}
 
-        <div className="view-toggle">
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button className="add-product-btn" onClick={onAddProduct}>＋ 商品追加</button>
+
           <button
-            className={`view-btn${currentView === 'table' ? ' active' : ''}`}
-            onClick={() => onViewChange('table')}
-            title="テーブル表示"
-          >⊞</button>
-          <button
-            className={`view-btn${currentView === 'grid' ? ' active' : ''}`}
-            onClick={() => onViewChange('grid')}
-            title="カード表示"
-          >⊟</button>
+            className={`filter-btn${bulkEditValue !== undefined ? ' active' : ''}`}
+            onClick={onBulkEditToggle}
+            title="一括編集モード"
+            style={{ gap: 4 }}
+          >
+            ✏️ 一括編集
+          </button>
+
+          <div className="view-toggle">
+            <button
+              className={`view-btn${currentView === 'table' ? ' active' : ''}`}
+              onClick={() => onViewChange('table')} title="テーブル表示"
+            >⊞</button>
+            <button
+              className={`view-btn${currentView === 'grid' ? ' active' : ''}`}
+              onClick={() => onViewChange('grid')} title="カード表示"
+            >⊟</button>
+          </div>
         </div>
       </div>
+
+      {/* Row 2: カテゴリ・ソート */}
+      {(categories.length > 0) && (
+        <div className="controls-inner" style={{ paddingTop: 8, borderTop: '1px solid var(--border)', marginTop: 8 }}>
+          <span className="legend-label" style={{ flexShrink: 0 }}>カテゴリ</span>
+
+          <button
+            className={`month-tab${categoryFilter === 'all' ? ' active' : ''}`}
+            onClick={() => onCategoryFilter('all')}
+            style={{ borderRadius: 20 }}
+          >すべて</button>
+
+          {categories.map(cat => (
+            <button
+              key={cat}
+              className={`month-tab${categoryFilter === cat ? ' active' : ''}`}
+              onClick={() => onCategoryFilter(cat)}
+              style={{ borderRadius: 20 }}
+            >{cat}</button>
+          ))}
+
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="legend-label">並び順</span>
+            <button
+              className={`filter-btn${sortBy === 'default' ? ' active' : ''}`}
+              style={{ fontSize: 12, padding: '4px 10px' }}
+              onClick={() => onSortBy('default')}
+            >デフォルト</button>
+            <button
+              className={`filter-btn${sortBy === 'category' ? ' active' : ''}`}
+              style={{ fontSize: 12, padding: '4px 10px' }}
+              onClick={() => onSortBy('category')}
+            >カテゴリ順</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

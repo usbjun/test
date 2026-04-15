@@ -6,8 +6,9 @@ export type ViewMode = 'table' | 'grid';
 export interface Product {
   id: number;
   name: string;
-  schedule: ScheduleValue[];
+  category: string;
   arrival: number;
+  schedule: ScheduleValue[];
   status: ProductStatus;
 }
 

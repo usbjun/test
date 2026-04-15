@@ -645,3 +645,76 @@ td.arrival-col-td.zero { color: var(--text-muted); }
   .search-box { width: 200px; }
   .grid-view { grid-template-columns: 1fr; }
 }
+
+/* ── 商品追加ボタン ── */
+.add-product-btn {
+  background: var(--red);
+  border: none; border-radius: 8px;
+  padding: 8px 14px; color: #fff;
+  font-family: inherit; font-size: 13px;
+  font-weight: 700; cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.add-product-btn:hover { opacity: 0.88; }
+
+/* ── カテゴリチップ ── */
+.category-chip {
+  display: inline-block;
+  padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  background: var(--surface2); color: var(--blue);
+  border: 1px solid rgba(61,125,202,0.3);
+  cursor: pointer; transition: all 0.12s;
+  white-space: nowrap;
+}
+.category-chip:hover { background: var(--unknown-bg); border-color: var(--blue); }
+.category-chip.empty { color: var(--text-muted); border-style: dashed; background: transparent; }
+.category-chip.small { font-size: 10px; padding: 1px 8px; }
+
+/* ── 一括編集バー ── */
+.bulk-edit-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #fff9e6, #fffdf5);
+  border-bottom: 2px solid var(--yellow);
+  flex-wrap: wrap;
+}
+.bulk-edit-label {
+  font-size: 12px; font-weight: 900;
+  color: var(--yellow-dark); letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.bulk-edit-hint {
+  font-size: 11px; color: var(--text-muted);
+  white-space: nowrap;
+}
+.bulk-edit-options { display: flex; gap: 6px; }
+.bulk-btn {
+  padding: 6px 12px; border-radius: 20px;
+  border: 2px solid var(--border);
+  background: var(--surface2); color: var(--text);
+  font-family: inherit; font-size: 13px;
+  font-weight: 700; cursor: pointer;
+  transition: all 0.12s; white-space: nowrap;
+}
+.bulk-btn:hover { border-color: var(--blue); background: var(--unknown-bg); }
+.bulk-btn.bulk-ok.active  { background: var(--ok-bg);      border-color: var(--ok);      color: var(--ok);      box-shadow: 0 0 0 2px rgba(22,163,74,0.2); }
+.bulk-btn.bulk-maybe.active { background: var(--maybe-bg); border-color: var(--maybe);   color: var(--maybe);   box-shadow: 0 0 0 2px rgba(180,83,9,0.2); }
+.bulk-btn.bulk-unknown.active { background: var(--unknown-bg); border-color: var(--unknown); color: var(--unknown); box-shadow: 0 0 0 2px rgba(29,78,216,0.2); }
+.bulk-btn.bulk-none.active { background: var(--surface3); border-color: var(--text-muted); color: var(--text-muted); }
+.bulk-exit-btn {
+  margin-left: auto; padding: 6px 14px;
+  border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-muted);
+  font-family: inherit; font-size: 12px; cursor: pointer;
+}
+.bulk-exit-btn:hover { color: var(--red); border-color: var(--red); }
+
+/* ── 一括編集モード時のセル表示 ── */
+.bulk-target { cursor: crosshair !important; }
+.bulk-target:hover {
+  outline: 2px solid var(--yellow) !important;
+  outline-offset: 1px;
+  transform: scale(1.15) !important;
+}

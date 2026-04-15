@@ -1,4 +1,4 @@
-import { MONTHS } from '../data/products';
+import { MONTHS, FY_GROUPS } from '../data/products';
 
 interface MonthFilterProps {
   monthFilter: number;
@@ -13,22 +13,17 @@ export default function MonthFilter({ monthFilter, onMonthFilter }: MonthFilterP
         onClick={() => onMonthFilter(-1)}
       >全期間</button>
 
-      <span className="month-tab year-label">2025年度</span>
-      {MONTHS.slice(0, 18).map((m, i) => (
-        <button
-          key={i}
-          className={`month-tab${monthFilter === i ? ' active' : ''}`}
-          onClick={() => onMonthFilter(i)}
-        >{m}</button>
-      ))}
-
-      <span className="month-tab year-label">2026年度</span>
-      {MONTHS.slice(18).map((m, i) => (
-        <button
-          key={i + 18}
-          className={`month-tab${monthFilter === i + 18 ? ' active' : ''}`}
-          onClick={() => onMonthFilter(i + 18)}
-        >{m}</button>
+      {FY_GROUPS.map(group => (
+        <span key={group.year}>
+          <span className="month-tab year-label">{group.year}年度</span>
+          {group.indices.map(i => (
+            <button
+              key={i}
+              className={`month-tab${monthFilter === i ? ' active' : ''}`}
+              onClick={() => onMonthFilter(i)}
+            >{MONTHS[i]}</button>
+          ))}
+        </span>
       ))}
     </div>
   );

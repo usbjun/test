@@ -12,11 +12,15 @@ function computeStatus(schedule: ScheduleValue[]): ProductStatus {
   return 'none';
 }
 
-function rowToProduct(row: { id: number; name: string; arrival: number; schedule: ScheduleValue[] }): Product {
+function rowToProduct(row: {
+  id: number; name: string; category: string;
+  arrival: number; schedule: ScheduleValue[];
+}): Product {
   const schedule = (row.schedule ?? []).slice(0, 26) as ScheduleValue[];
   return {
     id: row.id,
     name: row.name,
+    category: row.category ?? '',
     arrival: row.arrival,
     schedule,
     status: computeStatus(schedule),
@@ -28,7 +32,7 @@ function rowToProduct(row: { id: number; name: string; arrival: number; schedule
 export async function fetchProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, arrival, schedule')
+    .select('id, name, category, arrival, schedule')
     .order('id');
   if (error) throw error;
   return (data ?? []).map(rowToProduct);
@@ -49,69 +53,60 @@ export async function fetchCellData(): Promise<CellDataMap> {
   return map;
 }
 
-// ── UPDATE: product arrival ───────────────────────────────────
+// ── CREATE ───────────────────────────────────────────────────
 
-export async function updateArrival(id: number, arrival: number): Promise<void> {
-  const { error } = await supabase
-    .from('products')
-    .update({ arrival })
-    .eq('id', id);
-  if (error) throw error;
-}
-
-// ── UPDATE: schedule cell ─────────────────────────────────────
-
-export async function updateScheduleCell(
-  id: number,
-  schedule: ScheduleValue[]
-): Promise<void> {
-  const { error } = await supabase
-    .from('products')
-    .update({ schedule })
-    .eq('id', id);
-  if (error) throw error;
-}
-
-// ── UPSERT: cell_data (入荷数・消化数) ───────────────────────
-
-export async function upsertCellData(
-  productId: number,
-  monthIndex: number,
-  data: CellDataEntry
-): Promise<void> {
-  const { error } = await supabase
-    .from('cell_data')
-    .upsert(
-      {
-        product_id: productId,
-        month_index: monthIndex,
-        arrival_qty: data.arrival,
-        sold_qty: data.sold,
-      },
-      { onConflict: 'product_id,month_index' }
-    );
-  if (error) throw error;
-}
-
-// ── CREATE: 新規商品追加（将来の拡張用） ─────────────────────
-
-export async function createProduct(name: string): Promise<Product> {
+export async function createProduct(name: string, category: string): Promise<Product> {
   const emptySchedule: ScheduleValue[] = Array(26).fill(null);
   const { data, error } = await supabase
     .from('products')
-    .insert({ name, arrival: 0, schedule: emptySchedule })
-    .select('id, name, arrival, schedule')
+    .insert({ name, category, arrival: 0, schedule: emptySchedule })
+    .select('id, name, category, arrival, schedule')
     .single();
   if (error) throw error;
   return rowToProduct(data);
 }
 
-// ── DELETE: 商品削除（将来の拡張用） ─────────────────────────
+// ── UPDATE: arrival ───────────────────────────────────────────
+
+export async function updateArrival(id: number, arrival: number): Promise<void> {
+  const { error } = await supabase
+    .from('products').update({ arrival }).eq('id', id);
+  if (error) throw error;
+}
+
+// ── UPDATE: schedule ──────────────────────────────────────────
+
+export async function updateScheduleCell(id: number, schedule: ScheduleValue[]): Promise<void> {
+  const { error } = await supabase
+    .from('products').update({ schedule }).eq('id', id);
+  if (error) throw error;
+}
+
+// ── UPDATE: category ──────────────────────────────────────────
+
+export async function updateCategory(id: number, category: string): Promise<void> {
+  const { error } = await supabase
+    .from('products').update({ category }).eq('id', id);
+  if (error) throw error;
+}
+
+// ── UPSERT: cell_data ─────────────────────────────────────────
+
+export async function upsertCellData(
+  productId: number, monthIndex: number, data: CellDataEntry
+): Promise<void> {
+  const { error } = await supabase
+    .from('cell_data')
+    .upsert(
+      { product_id: productId, month_index: monthIndex, arrival_qty: data.arrival, sold_qty: data.sold },
+      { onConflict: 'product_id,month_index' }
+    );
+  if (error) throw error;
+}
+
+// ── DELETE ────────────────────────────────────────────────────
 
 export async function deleteProduct(id: number): Promise<void> {
-  const { error } = await supabase
-    .from('products')
-    .delete()
-    .eq('id', id);
+  const { error } = await supabase.from('products').delete().eq('id', id);
   if (error) throw error;
 }

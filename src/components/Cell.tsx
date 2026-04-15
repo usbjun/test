@@ -9,15 +9,16 @@ interface CellProps {
   onMouseEnter: (pid: number, mi: number, x: number, y: number) => void;
   onMouseMove: (x: number, y: number) => void;
   onMouseLeave: () => void;
-  /** 'table' renders pill cells; 'grid' renders dot cells */
   variant?: 'table' | 'grid';
   monthLabel?: string;
+  bulkEditActive?: boolean;
 }
 
 export default function Cell({
   value, pid, mi, cellData,
   onClick, onMouseEnter, onMouseMove, onMouseLeave,
   variant = 'table', monthLabel = '',
+  bulkEditActive = false,
 }: CellProps) {
   const hasData = cellData.arrival > 0 || cellData.sold > 0;
 
@@ -31,12 +32,14 @@ export default function Cell({
     onMouseLeave,
   };
 
+  const bulkClass = bulkEditActive ? ' bulk-target' : '';
+
   if (variant === 'grid') {
-    let cls = 'month-cell-dot dot-empty';
+    let cls = `month-cell-dot dot-empty${bulkClass}`;
     let icon = '';
-    if (value === '○') { cls = 'month-cell-dot dot-ok'; icon = '○'; }
-    else if (value === '△') { cls = 'month-cell-dot dot-maybe'; icon = '△'; }
-    else if (value === '?') { cls = 'month-cell-dot dot-unknown'; icon = '?'; }
+    if (value === '○') { cls = `month-cell-dot dot-ok${bulkClass}`; icon = '○'; }
+    else if (value === '△') { cls = `month-cell-dot dot-maybe${bulkClass}`; icon = '△'; }
+    else if (value === '?') { cls = `month-cell-dot dot-unknown${bulkClass}`; icon = '?'; }
     return (
       <div className={cls} title={monthLabel} {...handlers}>
         {icon}
@@ -45,35 +48,25 @@ export default function Cell({
     );
   }
 
-  // Table variant
-  if (value === '○') {
-    return (
-      <span className="cell-ok" {...handlers}>
-        ○
-        {hasData && <span className="cell-data-dot" />}
-      </span>
-    );
-  }
-  if (value === '△') {
-    return (
-      <span className="cell-maybe" {...handlers}>
-        △
-        {hasData && <span className="cell-data-dot" />}
-      </span>
-    );
-  }
-  if (value === '?') {
-    return (
-      <span className="cell-unknown" {...handlers}>
-        ?
-        {hasData && <span className="cell-data-dot" />}
-      </span>
-    );
-  }
+  // table variant
+  if (value === '○') return (
+    <span className={`cell-ok${bulkClass}`} {...handlers}>
+      ○{hasData && <span className="cell-data-dot" />}
+    </span>
+  );
+  if (value === '△') return (
+    <span className={`cell-maybe${bulkClass}`} {...handlers}>
+      △{hasData && <span className="cell-data-dot" />}
+    </span>
+  );
+  if (value === '?') return (
+    <span className={`cell-unknown${bulkClass}`} {...handlers}>
+      ?{hasData && <span className="cell-data-dot" />}
+    </span>
+  );
   return (
-    <span className="cell-empty-clickable" {...handlers}>
-      ＋
-      {hasData && <span className="cell-data-dot" />}
+    <span className={`cell-empty-clickable${bulkClass}`} {...handlers}>
+      ＋{hasData && <span className="cell-data-dot" />}
     </span>
   );
 }
