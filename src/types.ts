@@ -10,6 +10,7 @@ export interface Product {
   arrival: number;
   schedule: ScheduleValue[];
   status: ProductStatus;
+  sortOrder: number;
 }
 
 export interface CellDataEntry {

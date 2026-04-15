@@ -718,3 +718,38 @@ td.arrival-col-td.zero { color: var(--text-muted); }
   outline-offset: 1px;
   transform: scale(1.15) !important;
 }
+
+/* ── 一括編集バー: セクションラベル ── */
+.bulk-edit-section-label {
+  font-size: 10px; font-weight: 700;
+  color: var(--text-muted); letter-spacing: 0.07em;
+  text-transform: uppercase; white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── ドラッグハンドル ── */
+.drag-handle {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 100%; min-height: 32px;
+  color: #ccc; font-size: 18px; line-height: 1;
+  cursor: grab; user-select: none;
+  transition: color 0.15s;
+}
+.drag-handle:hover { color: var(--text-muted); }
+.drag-handle:active { cursor: grabbing; }
+
+/* ドラッグ中の行 */
+tr[draggable="true"] { cursor: default; }
+tr.drag-over-top { border-top: 3px solid var(--blue) !important; }
+
+/* ── カテゴリ一括モード時のカード ── */
+.cat-bulk-target {
+  cursor: pointer;
+  outline: 2px dashed var(--blue);
+  outline-offset: 2px;
+}
+.cat-bulk-target:hover {
+  outline-color: var(--yellow);
+  background: rgba(255, 203, 5, 0.05);
+  transform: translateY(-2px);
+}

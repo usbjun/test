@@ -1,8 +1,6 @@
 import { supabase } from './supabase';
 import { Product, CellDataMap, CellDataEntry, ScheduleValue, ProductStatus } from '../types';
 
-// ── helpers ──────────────────────────────────────────────────
-
 function computeStatus(schedule: ScheduleValue[]): ProductStatus {
   const hasStock = schedule.some(v => v === '○');
   const hasIncoming = schedule.some(v => v === '?');
@@ -14,7 +12,7 @@ function computeStatus(schedule: ScheduleValue[]): ProductStatus {
 
 function rowToProduct(row: {
   id: number; name: string; category: string;
-  arrival: number; schedule: ScheduleValue[];
+  arrival: number; schedule: ScheduleValue[]; sort_order?: number;
 }): Product {
   const schedule = (row.schedule ?? []).slice(0, 26) as ScheduleValue[];
   return {
@@ -24,15 +22,17 @@ function rowToProduct(row: {
     arrival: row.arrival,
     schedule,
     status: computeStatus(schedule),
+    sortOrder: row.sort_order ?? row.id,
   };
 }
 
-// ── READ ─────────────────────────────────────────────────────
+// ── READ ──────────────────────────────────────────────────────
 
 export async function fetchProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, category, arrival, schedule')
+    .select('id, name, category, arrival, schedule, sort_order')
+    .order('sort_order', { nullsFirst: false })
     .order('id');
   if (error) throw error;
   return (data ?? []).map(rowToProduct);
@@ -45,10 +45,7 @@ export async function fetchCellData(): Promise<CellDataMap> {
   if (error) throw error;
   const map: CellDataMap = {};
   for (const row of data ?? []) {
-    map[`${row.product_id}_${row.month_index}`] = {
-      arrival: row.arrival_qty,
-      sold: row.sold_qty,
-    };
+    map[`${row.product_id}_${row.month_index}`] = { arrival: row.arrival_qty, sold: row.sold_qty };
   }
   return map;
 }
@@ -57,37 +54,48 @@ export async function fetchCellData(): Promise<CellDataMap> {
 
 export async function createProduct(name: string, category: string): Promise<Product> {
   const emptySchedule: ScheduleValue[] = Array(26).fill(null);
+  // 末尾に追加するため sort_order を最大値 + 1 に設定
+  const { data: maxData } = await supabase
+    .from('products').select('sort_order').order('sort_order', { ascending: false }).limit(1);
+  const maxOrder = (maxData?.[0]?.sort_order ?? 0) + 1;
+
   const { data, error } = await supabase
     .from('products')
-    .insert({ name, category, arrival: 0, schedule: emptySchedule })
-    .select('id, name, category, arrival, schedule')
+    .insert({ name, category, arrival: 0, schedule: emptySchedule, sort_order: maxOrder })
+    .select('id, name, category, arrival, schedule, sort_order')
     .single();
   if (error) throw error;
   return rowToProduct(data);
 }
 
-// ── UPDATE: arrival ───────────────────────────────────────────
+// ── UPDATE ────────────────────────────────────────────────────
 
 export async function updateArrival(id: number, arrival: number): Promise<void> {
-  const { error } = await supabase
-    .from('products').update({ arrival }).eq('id', id);
+  const { error } = await supabase.from('products').update({ arrival }).eq('id', id);
   if (error) throw error;
 }
-
-// ── UPDATE: schedule ──────────────────────────────────────────
 
 export async function updateScheduleCell(id: number, schedule: ScheduleValue[]): Promise<void> {
-  const { error } = await supabase
-    .from('products').update({ schedule }).eq('id', id);
+  const { error } = await supabase.from('products').update({ schedule }).eq('id', id);
   if (error) throw error;
 }
 
-// ── UPDATE: category ──────────────────────────────────────────
-
 export async function updateCategory(id: number, category: string): Promise<void> {
-  const { error } = await supabase
-    .from('products').update({ category }).eq('id', id);
+  const { error } = await supabase.from('products').update({ category }).eq('id', id);
   if (error) throw error;
+}
+
+// ── REORDER ──────────────────────────────────────────────────
+
+export async function reorderProducts(items: { id: number; sortOrder: number }[]): Promise<void> {
+  const updates = items.map(({ id, sortOrder }) => ({ id, sort_order: sortOrder }));
+  const { error } = await supabase.rpc('batch_update_sort_order', { updates: JSON.stringify(updates) });
+  if (error) {
+    // フォールバック: 個別更新
+    await Promise.all(items.map(({ id, sortOrder }) =>
+      supabase.from('products').update({ sort_order: sortOrder }).eq('id', id)
+    ));
+  }
 }
 
 // ── UPSERT: cell_data ─────────────────────────────────────────
@@ -103,8 +111,6 @@ export async function upsertCellData(
     );
   if (error) throw error;
 }
-
-// ── DELETE ────────────────────────────────────────────────────
 
 export async function deleteProduct(id: number): Promise<void> {
   const { error } = await supabase.from('products').delete().eq('id', id);

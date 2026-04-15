@@ -2,8 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import {
   Product, CellDataMap, CellDataEntry,
-  PopupState, TooltipState,
-  ScheduleValue, StatusFilter, ViewMode,
+  PopupState, TooltipState, ScheduleValue, StatusFilter, ViewMode,
 } from './types';
 import * as api from './lib/api';
 import { supabase } from './lib/supabase';
@@ -33,7 +32,6 @@ function computeStatus(schedule: ScheduleValue[]) {
 export default function App() {
   // ── 認証 ───────────────────────────────────────────────────
   const [session, setSession] = useState<Session | null | undefined>(undefined);
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
@@ -46,7 +44,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ── UI状態 ─────────────────────────────────────────────────
+  // ── UI 状態 ─────────────────────────────────────────────────
   const [currentView, setCurrentView] = useState<ViewMode>('table');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -55,7 +53,12 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [popup, setPopup] = useState<PopupState | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-  const [bulkEditValue, setBulkEditValue] = useState<ScheduleValue | undefined>(undefined);
+
+  // 一括編集 (ステータス / カテゴリ)
+  const [bulkStatusValue, setBulkStatusValue] = useState<ScheduleValue | undefined>(undefined);
+  const [bulkCategoryValue, setBulkCategoryValue] = useState<string | undefined>(undefined);
+  const bulkEditOpen = bulkStatusValue !== undefined || bulkCategoryValue !== undefined;
+
   const [showAddModal, setShowAddModal] = useState(false);
 
   // ── 初回データ取得 ──────────────────────────────────────────
@@ -68,10 +71,10 @@ export default function App() {
       .finally(() => setLoading(false));
   }, [session]);
 
-  // ── カテゴリ一覧 ────────────────────────────────────────────
+  // ── カテゴリ一覧（ソート済み）──────────────────────────────
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean))).sort();
 
-  // ── フィルター＆ソート ─────────────────────────────────────
+  // ── フィルター & ソート ─────────────────────────────────────
   const getCellData = useCallback((pid: number, mi: number): CellDataEntry => (
     cellData[`${pid}_${mi}`] || { arrival: 0, sold: 0 }
   ), [cellData]);
@@ -84,7 +87,6 @@ export default function App() {
     if (monthFilter >= 0 && !p.schedule[monthFilter]) return false;
     return true;
   });
-
   if (sortBy === 'category') {
     filtered = [...filtered].sort((a, b) =>
       (a.category || 'zzz').localeCompare(b.category || 'zzz', 'ja') ||
@@ -114,15 +116,15 @@ export default function App() {
   }
 
   async function handleArrivalChange(pid: number, val: string) {
-    const num = parseInt(val.replace(/[,，—]/g, '').trim(), 10);
-    const arrival = isNaN(num) ? 0 : num;
-    setProducts(prev => prev.map(p => p.id === pid ? { ...p, arrival } : p));
-    try { await api.updateArrival(pid, arrival); } catch { alert('入荷数の保存に失敗しました'); }
+    const arrival = parseInt(val.replace(/[,，—]/g, '').trim(), 10);
+    const n = isNaN(arrival) ? 0 : arrival;
+    setProducts(prev => prev.map(p => p.id === pid ? { ...p, arrival: n } : p));
+    api.updateArrival(pid, n).catch(() => alert('入荷数の保存に失敗しました'));
   }
 
   async function handleCategoryChange(pid: number, category: string) {
     setProducts(prev => prev.map(p => p.id === pid ? { ...p, category } : p));
-    try { await api.updateCategory(pid, category); } catch { alert('カテゴリの保存に失敗しました'); }
+    api.updateCategory(pid, category).catch(() => alert('カテゴリの保存に失敗しました'));
   }
 
   async function handleSelectIcon(val: ScheduleValue) {
@@ -135,59 +137,89 @@ export default function App() {
     setProducts(prev => prev.map(p =>
       p.id === pid ? { ...p, schedule: newSchedule, status: computeStatus(newSchedule) } : p
     ));
-    try {
-      await api.updateScheduleCell(pid, newSchedule);
-    } catch {
-      setProducts(prev => prev.map(p => p.id === pid ? { ...target } : p));
+    api.updateScheduleCell(pid, newSchedule).catch(() => {
+      setProducts(prev => prev.map(p => p.id === pid ? target : p));
       alert('スケジュールの保存に失敗しました');
-    }
+    });
   }
 
   async function handleUpdateCellData(data: CellDataEntry) {
     if (!popup) return;
     const { pid, mi } = popup;
     setCellData(prev => ({ ...prev, [`${pid}_${mi}`]: data }));
-    try { await api.upsertCellData(pid, mi, data); } catch { alert('セルデータの保存に失敗しました'); }
+    api.upsertCellData(pid, mi, data).catch(() => alert('セルデータの保存に失敗しました'));
   }
 
-  // ── セルクリック（通常 or 一括編集） ──────────────────────
+  // ── ドラッグ並び替え ─────────────────────────────────────
+  async function handleReorder(draggedId: number, targetId: number) {
+    const prev = [...products];
+    const newProducts = [...products];
+    const fromIdx = newProducts.findIndex(p => p.id === draggedId);
+    const toIdx = newProducts.findIndex(p => p.id === targetId);
+    const [moved] = newProducts.splice(fromIdx, 1);
+    newProducts.splice(toIdx, 0, moved);
+    const withOrder = newProducts.map((p, i) => ({ ...p, sortOrder: i }));
+    setProducts(withOrder);
+    try {
+      await api.reorderProducts(withOrder.map(p => ({ id: p.id, sortOrder: p.sortOrder })));
+    } catch {
+      setProducts(prev);
+      alert('並び替えの保存に失敗しました');
+    }
+  }
+
+  // ── セルクリック（通常 / ステータス一括 / カテゴリ一括） ──
   function handleCellClick(pid: number, mi: number, x: number, y: number) {
-    if (bulkEditValue !== undefined) {
-      // 一括編集モード: ポップアップなしで即反映
+    if (bulkStatusValue !== undefined) {
       const target = products.find(p => p.id === pid);
       if (!target) return;
       const newSchedule = [...target.schedule] as ScheduleValue[];
-      newSchedule[mi] = bulkEditValue;
+      newSchedule[mi] = bulkStatusValue;
       setProducts(prev => prev.map(p =>
         p.id === pid ? { ...p, schedule: newSchedule, status: computeStatus(newSchedule) } : p
       ));
-      api.updateScheduleCell(pid, newSchedule).catch(() => {
-        setProducts(prev => prev.map(p => p.id === pid ? { ...target } : p));
-      });
+      api.updateScheduleCell(pid, newSchedule).catch(() =>
+        setProducts(prev => prev.map(p => p.id === pid ? target : p))
+      );
       return;
     }
     setTooltip(null);
     setPopup({ pid, mi, x, y });
   }
 
-  // ── ローディング / エラー / 未認証 ────────────────────────
+  // カテゴリ一括適用（商品名クリック）
+  function handleBulkCategoryApply(pid: number) {
+    if (bulkCategoryValue === undefined) return;
+    handleCategoryChange(pid, bulkCategoryValue);
+  }
+
+  // 一括編集バーの開閉
+  function handleBulkEditToggle() {
+    if (bulkEditOpen) {
+      setBulkStatusValue(undefined);
+      setBulkCategoryValue(undefined);
+    } else {
+      setBulkStatusValue('○'); // 開いたときはステータス○をデフォルト選択
+    }
+  }
+
+  // ── ローディング / エラー / 認証 ──────────────────────────
   if (session === undefined) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--text-muted)' }}>読み込み中…</div>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', color:'var(--text-muted)' }}>読み込み中…</div>
   );
   if (!session) return <LoginPage />;
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 16, color: 'var(--text-muted)' }}>
-      <div style={{ fontSize: 32 }}>⏳</div><div>データを読み込み中…</div>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:16, color:'var(--text-muted)' }}>
+      <div style={{ fontSize:32 }}>⏳</div><div>データを読み込み中…</div>
     </div>
   );
   if (error) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 16, color: 'var(--red)' }}>
-      <div style={{ fontSize: 32 }}>⚠️</div><div style={{ fontWeight: 700 }}>接続エラー</div>
-      <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{error}</div>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:16, color:'var(--red)' }}>
+      <div style={{ fontSize:32 }}>⚠️</div><div style={{ fontWeight:700 }}>接続エラー</div>
+      <div style={{ fontSize:13, color:'var(--text-muted)' }}>{error}</div>
     </div>
   );
 
-  // ── メイン ─────────────────────────────────────────────────
   return (
     <div className="wrapper">
       <Header skuCount={products.length} userEmail={session.user.email ?? ''} onLogout={signOut} />
@@ -198,13 +230,18 @@ export default function App() {
         currentView={currentView} onViewChange={setCurrentView}
         categories={categories} categoryFilter={categoryFilter} onCategoryFilter={setCategoryFilter}
         sortBy={sortBy} onSortBy={setSortBy}
-        bulkEditValue={bulkEditValue}
-        onBulkEditToggle={() => setBulkEditValue(prev => prev !== undefined ? undefined : '○')}
+        bulkStatusValue={bulkStatusValue} bulkCategoryValue={bulkCategoryValue}
+        onBulkEditToggle={handleBulkEditToggle}
         onAddProduct={() => setShowAddModal(true)}
       />
 
-      {bulkEditValue !== undefined && (
-        <BulkEditBar bulkEditValue={bulkEditValue} onChange={setBulkEditValue} />
+      {bulkEditOpen && (
+        <BulkEditBar
+          bulkStatusValue={bulkStatusValue} onStatusChange={v => { setBulkStatusValue(v); setBulkCategoryValue(undefined); }}
+          bulkCategoryValue={bulkCategoryValue} onCategoryChange={v => { setBulkCategoryValue(v); setBulkStatusValue(undefined); }}
+          categories={categories}
+          onClose={() => { setBulkStatusValue(undefined); setBulkCategoryValue(undefined); }}
+        />
       )}
 
       <main>
@@ -212,45 +249,45 @@ export default function App() {
         <StatsRow products={filtered} />
         {currentView === 'table' ? (
           <TableView
-            products={filtered} monthFilter={monthFilter}
+            products={filtered} allCategories={categories} monthFilter={monthFilter}
             getCellData={getCellData}
             onCellClick={handleCellClick}
-            onTooltip={(pid, mi, x, y) => { if (bulkEditValue === undefined) setTooltip({ pid, mi, x, y }); }}
-            onTooltipMove={(x, y) => setTooltip(prev => prev ? { ...prev, x, y } : null)}
+            onTooltip={(pid,mi,x,y) => { if (!bulkStatusValue) setTooltip({pid,mi,x,y}); }}
+            onTooltipMove={(x,y) => setTooltip(prev => prev ? {...prev,x,y} : null)}
             onTooltipHide={() => setTooltip(null)}
             onArrivalChange={handleArrivalChange}
             onCategoryChange={handleCategoryChange}
-            bulkEditActive={bulkEditValue !== undefined}
+            bulkStatusActive={bulkStatusValue !== undefined}
+            bulkCategoryValue={bulkCategoryValue}
+            onBulkCategoryApply={handleBulkCategoryApply}
+            onReorder={handleReorder}
+            sortBy={sortBy}
           />
         ) : (
           <GridView
-            products={filtered} monthFilter={monthFilter}
+            products={filtered} allCategories={categories} monthFilter={monthFilter}
             getCellData={getCellData}
             onCellClick={handleCellClick}
-            onTooltip={(pid, mi, x, y) => { if (bulkEditValue === undefined) setTooltip({ pid, mi, x, y }); }}
-            onTooltipMove={(x, y) => setTooltip(prev => prev ? { ...prev, x, y } : null)}
+            onTooltip={(pid,mi,x,y) => { if (!bulkStatusValue) setTooltip({pid,mi,x,y}); }}
+            onTooltipMove={(x,y) => setTooltip(prev => prev ? {...prev,x,y} : null)}
             onTooltipHide={() => setTooltip(null)}
             onCategoryChange={handleCategoryChange}
-            bulkEditActive={bulkEditValue !== undefined}
+            bulkStatusActive={bulkStatusValue !== undefined}
+            bulkCategoryValue={bulkCategoryValue}
+            onBulkCategoryApply={handleBulkCategoryApply}
           />
         )}
       </main>
 
       {tooltip && <Tooltip tooltip={tooltip} products={products} getCellData={getCellData} />}
       {popup && (
-        <CellPopup
-          popup={popup} products={products} getCellData={getCellData}
+        <CellPopup popup={popup} products={products} getCellData={getCellData}
           onClose={() => setPopup(null)}
-          onSelectIcon={handleSelectIcon}
-          onUpdateCellData={handleUpdateCellData}
-        />
+          onSelectIcon={handleSelectIcon} onUpdateCellData={handleUpdateCellData} />
       )}
       {showAddModal && (
-        <AddProductModal
-          existingCategories={categories}
-          onAdd={handleAddProduct}
-          onClose={() => setShowAddModal(false)}
-        />
+        <AddProductModal existingCategories={categories}
+          onAdd={handleAddProduct} onClose={() => setShowAddModal(false)} />
       )}
     </div>
   );
