@@ -135,6 +135,8 @@ export default function TableView({
                     value={p.category}
                     categories={allCategories}
                     onSave={cat => onCategoryChange(p.id, cat)}
+                    bulkMode={isCatBulk}
+                    onBulkApply={() => onBulkCategoryApply(p.id)}
                   />
                 </td>
 

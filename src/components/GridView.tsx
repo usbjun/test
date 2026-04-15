@@ -68,6 +68,8 @@ export default function GridView({
                     categories={allCategories}
                     onSave={cat => onCategoryChange(p.id, cat)}
                     small
+                    bulkMode={isCatBulk}
+                    onBulkApply={() => onBulkCategoryApply(p.id)}
                   />
                 </div>
               </div>
