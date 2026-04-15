@@ -672,6 +672,105 @@ td.arrival-col-td.zero { color: var(--text-muted); }
 }
 .add-product-btn:hover { opacity: 0.88; }
 
+.excel-upload-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px; color: var(--text);
+  font-family: inherit; font-size: 13px;
+  font-weight: 700; cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.excel-upload-btn:hover { background: var(--surface3); }
+
+/* ── Excel アップロードモーダル ── */
+.excel-upload-modal { max-width: 680px; width: 95vw; }
+.excel-format-note {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+.excel-format-title {
+  font-size: 11px; font-weight: 700; color: var(--text-muted);
+  letter-spacing: 0.07em; text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.excel-format-table {
+  border-collapse: collapse; width: 100%; font-size: 12px;
+  margin-bottom: 6px;
+}
+.excel-format-table th {
+  background: var(--surface3); padding: 4px 10px;
+  border: 1px solid var(--border); font-weight: 700; color: var(--text-muted);
+  text-align: center;
+}
+.excel-format-table td {
+  padding: 4px 10px; border: 1px solid var(--border); color: var(--text);
+}
+.excel-format-table .example-row td { color: var(--text-muted); font-size: 11px; }
+.excel-format-note-text { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+.excel-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  margin-bottom: 12px;
+}
+.excel-drop-zone:hover { border-color: var(--blue); background: rgba(61,125,202,0.04); }
+.excel-drop-icon { font-size: 28px; margin-bottom: 6px; }
+.excel-drop-text { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.excel-drop-sub { font-size: 11px; color: var(--text-muted); }
+
+.excel-error {
+  background: rgba(227,53,13,0.07);
+  border: 1px solid rgba(227,53,13,0.25);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--red);
+  margin-bottom: 12px;
+}
+
+.excel-preview { margin-top: 4px; }
+.excel-preview-header {
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.excel-preview-count {
+  background: var(--blue); color: #fff;
+  border-radius: 20px; padding: 1px 8px;
+  font-size: 11px;
+}
+.excel-preview-table-wrap {
+  max-height: 220px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: 8px;
+  scrollbar-width: thin;
+}
+.excel-preview-table {
+  border-collapse: collapse; width: 100%; font-size: 12px;
+}
+.excel-preview-table th {
+  position: sticky; top: 0;
+  background: var(--surface3); padding: 5px 10px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700; color: var(--text-muted);
+  text-align: left; white-space: nowrap;
+}
+.excel-preview-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.excel-preview-table tr:last-child td { border-bottom: none; }
+.excel-preview-table .preview-no { color: var(--text-muted); text-align: right; }
+
 /* ── カテゴリチップ ── */
 .category-chip {
   display: inline-block;

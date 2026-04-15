@@ -18,6 +18,7 @@ import CellPopup from './components/CellPopup';
 import Tooltip from './components/Tooltip';
 import BulkEditBar from './components/BulkEditBar';
 import AddProductModal from './components/AddProductModal';
+import ExcelUploadModal from './components/ExcelUploadModal';
 
 function computeStatus(schedule: ScheduleValue[]) {
   const hasStock = schedule.some(v => v === '○');
@@ -59,6 +60,7 @@ export default function App() {
   const bulkEditOpen = bulkStatusValue !== undefined || bulkCategoryValue !== undefined;
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showExcelModal, setShowExcelModal] = useState(false);
 
   // ── 初回データ取得 ──────────────────────────────────────────
   useEffect(() => {
@@ -112,6 +114,11 @@ export default function App() {
   async function handleAddProduct(name: string, category: string) {
     const newProduct = await api.createProduct(name, category);
     setProducts(prev => [...prev, newProduct]);
+  }
+
+  async function handleBatchUpload(rows: { name: string; category: string; arrival: number }[]) {
+    const newProducts = await api.batchCreateProducts(rows);
+    setProducts(prev => [...prev, ...newProducts]);
   }
 
   async function handleArrivalChange(pid: number, val: string) {
@@ -249,6 +256,7 @@ export default function App() {
         bulkStatusValue={bulkStatusValue} bulkCategoryValue={bulkCategoryValue}
         onBulkEditToggle={handleBulkEditToggle}
         onAddProduct={() => setShowAddModal(true)}
+        onExcelUpload={() => setShowExcelModal(true)}
       />
 
       {bulkEditOpen && (
@@ -307,6 +315,10 @@ export default function App() {
       {showAddModal && (
         <AddProductModal existingCategories={categories}
           onAdd={handleAddProduct} onClose={() => setShowAddModal(false)} />
+      )}
+      {showExcelModal && (
+        <ExcelUploadModal
+          onUpload={handleBatchUpload} onClose={() => setShowExcelModal(false)} />
       )}
     </div>
   );

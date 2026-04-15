@@ -15,12 +15,13 @@ interface ControlsBarProps {
   bulkCategoryValue: string | undefined;
   onBulkEditToggle: () => void;
   onAddProduct: () => void;
+  onExcelUpload: () => void;
 }
 
 export default function ControlsBar({
   searchQuery, onSearch, statusFilter, onStatusFilter, counts,
   currentView, onViewChange, categories, categoryFilter, onCategoryFilter,
-  sortBy, onSortBy, bulkStatusValue, bulkCategoryValue, onBulkEditToggle, onAddProduct,
+  sortBy, onSortBy, bulkStatusValue, bulkCategoryValue, onBulkEditToggle, onAddProduct, onExcelUpload,
 }: ControlsBarProps) {
   const bulkActive = bulkStatusValue !== undefined || bulkCategoryValue !== undefined;
 
@@ -53,6 +54,7 @@ export default function ControlsBar({
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <button className="add-product-btn" onClick={onAddProduct}>＋ 商品追加</button>
+          <button className="excel-upload-btn" onClick={onExcelUpload}>📥 Excel</button>
           <button
             className={`filter-btn${bulkActive ? ' active' : ''}`}
             onClick={onBulkEditToggle}

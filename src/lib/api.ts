@@ -112,6 +112,30 @@ export async function upsertCellData(
   if (error) throw error;
 }
 
+export async function batchCreateProducts(
+  rows: { name: string; category: string; arrival: number }[]
+): Promise<Product[]> {
+  const { data: maxData } = await supabase
+    .from('products').select('sort_order').order('sort_order', { ascending: false }).limit(1);
+  const baseOrder = (maxData?.[0]?.sort_order ?? 0) + 1;
+  const emptySchedule: ScheduleValue[] = Array(26).fill(null);
+
+  const inserts = rows.map((r, i) => ({
+    name: r.name,
+    category: r.category,
+    arrival: r.arrival,
+    schedule: emptySchedule,
+    sort_order: baseOrder + i,
+  }));
+
+  const { data, error } = await supabase
+    .from('products')
+    .insert(inserts)
+    .select('id, name, category, arrival, schedule, sort_order');
+  if (error) throw error;
+  return (data ?? []).map(rowToProduct);
+}
+
 export async function updateProductName(id: number, name: string): Promise<void> {
   const { error } = await supabase.from('products').update({ name }).eq('id', id);
   if (error) throw error;
