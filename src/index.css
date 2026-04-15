@@ -348,7 +348,11 @@ main {
 
 /* Table */
 .table-wrapper {
-  overflow-x: auto;
+  /* overflow を縦横両方 auto にして table-wrapper 自体をスクロールコンテナにする。
+     これにより position:sticky が wrapper 基準で確実に動く。 */
+  overflow: auto;
+  max-height: calc(100vh - 280px);
+  min-height: 200px;
   border: 1px solid var(--border);
   border-radius: 12px;
   scrollbar-width: thin;
@@ -368,7 +372,7 @@ thead .sticky-th {
   z-index: 10;
 }
 thead .year-th {
-  top: 64px; /* app header の高さ分オフセット */
+  top: 0; /* table-wrapper 内スクロール基準 */
   background: var(--surface3);
   font-size: 10px;
   font-weight: 700;
@@ -380,7 +384,7 @@ thead .year-th {
   text-transform: uppercase;
 }
 thead .month-th {
-  top: 90px; /* 64px header + 26px year-row */
+  top: 27px; /* year-row の高さ分オフセット */
   background: var(--surface2);
   padding: 8px 4px;
   text-align: center;
