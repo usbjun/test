@@ -15,7 +15,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function Tooltip({ tooltip, products, getCellData }: TooltipProps) {
   const { pid, mi, x, y } = tooltip;
-  const product = products[pid];
+  const product = products.find(p => p.id === pid);
   const val = product?.schedule[mi] ?? null;
   const d = getCellData(pid, mi);
   const iconLabel = val ? STATUS_LABEL[val] ?? 'なし' : 'なし';
