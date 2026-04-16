@@ -54,7 +54,7 @@ export default function ControlsBar({
           </button>
         ))}
 
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="controls-right" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           {isAdmin && <button className="add-product-btn" onClick={onAddProduct}>＋ 商品追加</button>}
           {isAdmin && <button className="excel-upload-btn" onClick={onExcelUpload}>📥 Excel</button>}
           {isAdmin && (

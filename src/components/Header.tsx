@@ -40,7 +40,7 @@ export default function Header({ skuCount, userEmail, isAdmin, onLogout }: Heade
             総SKU数 <strong>{skuCount}</strong>
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>👤 {userEmail}</span>
+            <span className="header-user-email">👤 {userEmail}</span>
             <span style={{
               fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
               background: isAdmin ? 'var(--ok-bg)' : 'var(--surface3)',

@@ -39,7 +39,9 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   // ── UI 状態 ─────────────────────────────────────────────────
-  const [currentView, setCurrentView] = useState<ViewMode>('table');
+  const [currentView, setCurrentView] = useState<ViewMode>(
+    () => window.innerWidth <= 640 ? 'grid' : 'table'
+  );
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'default' | 'category'>('default');
