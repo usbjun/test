@@ -887,6 +887,9 @@ td.arrival-col-td.zero { color: var(--text-muted); }
 }
 .bulk-exit-btn:hover { color: var(--red); border-color: var(--red); }
 
+/* ── ドラッグ一括適用中：テキスト選択を無効化 ── */
+body.bulk-dragging { user-select: none; }
+
 /* ── 一括編集モード時のセル表示 ── */
 .bulk-target { cursor: crosshair !important; }
 .bulk-target:hover {

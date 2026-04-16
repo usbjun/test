@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import {
   Product, CellDataMap, CellDataEntry,
@@ -58,6 +58,39 @@ export default function App() {
   const [bulkStatusValue, setBulkStatusValue] = useState<ScheduleValue | undefined>(undefined);
   const [bulkCategoryValue, setBulkCategoryValue] = useState<string | undefined>(undefined);
   const bulkEditOpen = bulkStatusValue !== undefined || bulkCategoryValue !== undefined;
+
+  // ── ドラッグ一括適用 ────────────────────────────────────────
+  const isBulkDragging = useRef(false);
+  const lastBulkCell = useRef<string | null>(null);
+  // 最新の applyBulkStatus を常に参照できるよう ref に保持
+  const applyBulkStatusRef = useRef<((pid: number, mi: number) => void) | null>(null);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isBulkDragging.current) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (!el) return;
+      const cell = (el as HTMLElement).closest('[data-bulk-pid]') as HTMLElement | null;
+      if (!cell) return;
+      const pid = parseInt(cell.dataset.bulkPid!, 10);
+      const mi = parseInt(cell.dataset.bulkMi!, 10);
+      const key = `${pid}_${mi}`;
+      if (lastBulkCell.current === key) return;
+      lastBulkCell.current = key;
+      applyBulkStatusRef.current?.(pid, mi);
+    };
+    const onMouseUp = () => {
+      isBulkDragging.current = false;
+      lastBulkCell.current = null;
+      document.body.classList.remove('bulk-dragging');
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, []);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showExcelModal, setShowExcelModal] = useState(false);
@@ -192,19 +225,38 @@ export default function App() {
     }
   }
 
+  // ── 一括ステータス適用（クリック・ドラッグ共通） ──────────
+  // functional update で常に最新スケジュールを取得し、同行複数セルも正しく反映
+  function applyBulkStatus(pid: number, mi: number) {
+    if (bulkStatusValue === undefined) return;
+    setProducts(prev => {
+      const target = prev.find(p => p.id === pid);
+      if (!target) return prev;
+      const newSchedule = [...target.schedule] as ScheduleValue[];
+      newSchedule[mi] = bulkStatusValue;
+      api.updateScheduleCell(pid, newSchedule).catch(() =>
+        setProducts(p2 => p2.map(p => p.id === pid ? target : p))
+      );
+      return prev.map(p =>
+        p.id === pid ? { ...p, schedule: newSchedule, status: computeStatus(newSchedule) } : p
+      );
+    });
+  }
+  // ref を毎レンダーで更新（グローバル mousemove から参照するため）
+  applyBulkStatusRef.current = applyBulkStatus;
+
+  // ドラッグ開始（mousedown）
+  function handleBulkDragStart(pid: number, mi: number) {
+    isBulkDragging.current = true;
+    lastBulkCell.current = `${pid}_${mi}`;
+    document.body.classList.add('bulk-dragging');
+    applyBulkStatus(pid, mi);
+  }
+
   // ── セルクリック（通常 / ステータス一括 / カテゴリ一括） ──
   function handleCellClick(pid: number, mi: number, x: number, y: number) {
     if (bulkStatusValue !== undefined) {
-      const target = products.find(p => p.id === pid);
-      if (!target) return;
-      const newSchedule = [...target.schedule] as ScheduleValue[];
-      newSchedule[mi] = bulkStatusValue;
-      setProducts(prev => prev.map(p =>
-        p.id === pid ? { ...p, schedule: newSchedule, status: computeStatus(newSchedule) } : p
-      ));
-      api.updateScheduleCell(pid, newSchedule).catch(() =>
-        setProducts(prev => prev.map(p => p.id === pid ? target : p))
-      );
+      applyBulkStatus(pid, mi);
       return;
     }
     setTooltip(null);
@@ -287,6 +339,7 @@ export default function App() {
             bulkStatusActive={bulkStatusValue !== undefined}
             bulkCategoryValue={bulkCategoryValue}
             onBulkCategoryApply={handleBulkCategoryApply}
+            onBulkDragStart={handleBulkDragStart}
             onReorder={handleReorder}
             sortBy={sortBy}
           />
@@ -302,6 +355,7 @@ export default function App() {
             bulkStatusActive={bulkStatusValue !== undefined}
             bulkCategoryValue={bulkCategoryValue}
             onBulkCategoryApply={handleBulkCategoryApply}
+            onBulkDragStart={handleBulkDragStart}
           />
         )}
       </main>

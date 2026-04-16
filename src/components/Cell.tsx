@@ -12,6 +12,7 @@ interface CellProps {
   variant?: 'table' | 'grid';
   monthLabel?: string;
   bulkEditActive?: boolean;
+  onBulkMouseDown?: (pid: number, mi: number) => void;
 }
 
 export default function Cell({
@@ -19,10 +20,20 @@ export default function Cell({
   onClick, onMouseEnter, onMouseMove, onMouseLeave,
   variant = 'table', monthLabel = '',
   bulkEditActive = false,
+  onBulkMouseDown,
 }: CellProps) {
   const hasData = cellData.arrival > 0 || cellData.sold > 0;
 
-  const handlers = {
+  const handlers = bulkEditActive && onBulkMouseDown ? {
+    onMouseDown: (e: React.MouseEvent) => {
+      e.preventDefault();
+      onBulkMouseDown(pid, mi);
+    },
+    onDragStart: (e: React.MouseEvent) => e.preventDefault(),
+    onMouseEnter: (e: React.MouseEvent) => onMouseEnter(pid, mi, e.clientX, e.clientY),
+    onMouseMove: (e: React.MouseEvent) => onMouseMove(e.clientX, e.clientY),
+    onMouseLeave,
+  } : {
     onClick: (e: React.MouseEvent) => {
       e.stopPropagation();
       onClick(pid, mi, e.clientX, e.clientY);
@@ -33,6 +44,9 @@ export default function Cell({
   };
 
   const bulkClass = bulkEditActive ? ' bulk-target' : '';
+  const bulkAttrs = bulkEditActive
+    ? { 'data-bulk-pid': pid, 'data-bulk-mi': mi }
+    : {};
 
   if (variant === 'grid') {
     let cls = `month-cell-dot dot-empty${bulkClass}`;
@@ -41,7 +55,7 @@ export default function Cell({
     else if (value === '△') { cls = `month-cell-dot dot-maybe${bulkClass}`; icon = '△'; }
     else if (value === '?') { cls = `month-cell-dot dot-unknown${bulkClass}`; icon = '?'; }
     return (
-      <div className={cls} title={monthLabel} {...handlers}>
+      <div className={cls} title={monthLabel} {...handlers} {...bulkAttrs}>
         {icon}
         {hasData && <span style={{ position: 'absolute', top: -1, right: -1, width: 5, height: 5, borderRadius: '50%', background: 'var(--blue)', display: 'block' }} />}
       </div>
@@ -50,22 +64,22 @@ export default function Cell({
 
   // table variant
   if (value === '○') return (
-    <span className={`cell-ok${bulkClass}`} {...handlers}>
+    <span className={`cell-ok${bulkClass}`} {...handlers} {...bulkAttrs}>
       ○{hasData && <span className="cell-data-dot" />}
     </span>
   );
   if (value === '△') return (
-    <span className={`cell-maybe${bulkClass}`} {...handlers}>
+    <span className={`cell-maybe${bulkClass}`} {...handlers} {...bulkAttrs}>
       △{hasData && <span className="cell-data-dot" />}
     </span>
   );
   if (value === '?') return (
-    <span className={`cell-unknown${bulkClass}`} {...handlers}>
+    <span className={`cell-unknown${bulkClass}`} {...handlers} {...bulkAttrs}>
       ?{hasData && <span className="cell-data-dot" />}
     </span>
   );
   return (
-    <span className={`cell-empty-clickable${bulkClass}`} {...handlers}>
+    <span className={`cell-empty-clickable${bulkClass}`} {...handlers} {...bulkAttrs}>
       ＋{hasData && <span className="cell-data-dot" />}
     </span>
   );

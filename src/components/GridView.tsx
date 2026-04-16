@@ -17,6 +17,7 @@ interface GridViewProps {
   bulkStatusActive: boolean;
   bulkCategoryValue: string | undefined;
   onBulkCategoryApply: (pid: number) => void;
+  onBulkDragStart?: (pid: number, mi: number) => void;
 }
 
 const PAIRS: [number, number][] = Array.from({ length: 13 }, (_, i) => [i * 2, i * 2 + 1]);
@@ -24,7 +25,7 @@ const PAIRS: [number, number][] = Array.from({ length: 13 }, (_, i) => [i * 2, i
 export default function GridView({
   products, allCategories, getCellData,
   onCellClick, onTooltip, onTooltipMove, onTooltipHide,
-  onCategoryChange, bulkStatusActive, bulkCategoryValue, onBulkCategoryApply,
+  onCategoryChange, bulkStatusActive, bulkCategoryValue, onBulkCategoryApply, onBulkDragStart,
 }: GridViewProps) {
   if (products.length === 0) {
     return <div className="empty-state"><div className="icon">🔍</div><p>該当する商品が見つかりません</p></div>;
@@ -92,10 +93,12 @@ export default function GridView({
                       <div className="month-cell-label">{mNum}</div>
                       <Cell value={p.schedule[a]} pid={p.id} mi={a} cellData={getCellData(p.id, a)}
                         onClick={onCellClick} onMouseEnter={onTooltip} onMouseMove={onTooltipMove} onMouseLeave={onTooltipHide}
-                        variant="grid" monthLabel={MONTHS[a]} bulkEditActive={bulkStatusActive} />
+                        variant="grid" monthLabel={MONTHS[a]} bulkEditActive={bulkStatusActive}
+                        onBulkMouseDown={onBulkDragStart} />
                       <Cell value={p.schedule[b]} pid={p.id} mi={b} cellData={getCellData(p.id, b)}
                         onClick={onCellClick} onMouseEnter={onTooltip} onMouseMove={onTooltipMove} onMouseLeave={onTooltipHide}
-                        variant="grid" monthLabel={MONTHS[b]} bulkEditActive={bulkStatusActive} />
+                        variant="grid" monthLabel={MONTHS[b]} bulkEditActive={bulkStatusActive}
+                        onBulkMouseDown={onBulkDragStart} />
                     </div>
                   );
                 })}

@@ -22,6 +22,7 @@ interface TableViewProps {
   bulkStatusActive: boolean;
   bulkCategoryValue: string | undefined;
   onBulkCategoryApply: (pid: number) => void;
+  onBulkDragStart?: (pid: number, mi: number) => void;
   onReorder: (draggedId: number, targetId: number) => void;
   sortBy: 'default' | 'category';
 }
@@ -37,7 +38,7 @@ export default function TableView({
   products, allCategories, monthFilter,
   getCellData, onCellClick, onTooltip, onTooltipMove, onTooltipHide,
   onArrivalChange, onCategoryChange, onRenameProduct, onDeleteProduct, onClearCells,
-  bulkStatusActive, bulkCategoryValue, onBulkCategoryApply,
+  bulkStatusActive, bulkCategoryValue, onBulkCategoryApply, onBulkDragStart,
   onReorder, sortBy,
 }: TableViewProps) {
   const [draggedId, setDraggedId] = useState<number | null>(null);
@@ -244,6 +245,7 @@ export default function TableView({
                         onClick={onCellClick}
                         onMouseEnter={onTooltip} onMouseMove={onTooltipMove} onMouseLeave={onTooltipHide}
                         variant="table" bulkEditActive={bulkStatusActive}
+                        onBulkMouseDown={onBulkDragStart}
                       />
                     </td>
                   ))}
