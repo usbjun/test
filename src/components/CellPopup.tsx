@@ -16,7 +16,7 @@ export default function CellPopup({
   onClose, onSelectIcon, onUpdateCellData,
 }: CellPopupProps) {
   const { pid, mi, x, y } = popup;
-  const product = products[pid];
+  const product = products.find(p => p.id === pid);
   const val = product?.schedule[mi] ?? null;
   const d = getCellData(pid, mi);
   const ref = useRef<HTMLDivElement>(null);
