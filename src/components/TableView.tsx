@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Product, CellDataEntry, ScheduleValue } from '../types';
 import { MONTHS, getYearSpans } from '../data/products';
@@ -85,6 +85,12 @@ export default function TableView({
   const isDraggable = sortBy === 'default';
   const isCatBulk = bulkCategoryValue !== undefined;
 
+  // 月境界スタイル：年度境界は太線、月区切りは薄い細線
+  const colBorder = (i: number): React.CSSProperties | undefined =>
+    i === 2 ? { borderLeft: '2px solid var(--border)' } :
+    (i % 2 === 0 && i > 2) ? { borderLeft: '1px solid rgba(221,226,238,0.55)' } :
+    undefined;
+
   function openSettings(e: React.MouseEvent, p: Product) {
     e.stopPropagation();
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -139,7 +145,7 @@ export default function TableView({
               <th className="sticky-th month-th" style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', minWidth: 110 }}>カテゴリ</th>
               <th className="sticky-th month-th arrival-col">入荷数</th>
               {monthsToShow.map(i => (
-                <th key={i} className="sticky-th month-th" style={i === 2 ? { borderLeft: '2px solid var(--border)' } : undefined}>
+                <th key={i} className="sticky-th month-th" style={colBorder(i)}>
                   {MONTHS[i]}
                 </th>
               ))}
@@ -238,7 +244,7 @@ export default function TableView({
 
                   {/* スケジュールセル */}
                   {monthsToShow.map(i => (
-                    <td key={i} style={i === 2 ? { borderLeft: '2px solid var(--border)' } : undefined}>
+                    <td key={i} style={colBorder(i)}>
                       <Cell
                         value={p.schedule[i]} pid={p.id} mi={i}
                         cellData={getCellData(p.id, i)}
