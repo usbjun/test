@@ -25,6 +25,7 @@ interface TableViewProps {
   onBulkDragStart?: (pid: number, mi: number) => void;
   onReorder: (draggedId: number, targetId: number) => void;
   sortBy: 'default' | 'category';
+  isAdmin: boolean;
 }
 
 interface SettingsState {
@@ -39,7 +40,7 @@ export default function TableView({
   getCellData, onCellClick, onTooltip, onTooltipMove, onTooltipHide,
   onArrivalChange, onCategoryChange, onRenameProduct, onDeleteProduct, onClearCells,
   bulkStatusActive, bulkCategoryValue, onBulkCategoryApply, onBulkDragStart,
-  onReorder, sortBy,
+  onReorder, sortBy, isAdmin,
 }: TableViewProps) {
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
@@ -82,8 +83,8 @@ export default function TableView({
 
   const monthsToShow = monthFilter >= 0 ? [monthFilter] : MONTHS.map((_, i) => i);
   const yearSpans = getYearSpans(monthsToShow);
-  const isDraggable = sortBy === 'default';
-  const isCatBulk = bulkCategoryValue !== undefined;
+  const isDraggable = sortBy === 'default' && isAdmin;
+  const isCatBulk = bulkCategoryValue !== undefined && isAdmin;
 
   // 月境界スタイル：年度境界は太線、月区切りは薄い細線
   const colBorder = (i: number): React.CSSProperties | undefined =>
@@ -209,11 +210,13 @@ export default function TableView({
                     title={nameClickable ? `クリックして「${bulkCategoryValue}」を適用` : undefined}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <button
-                        className="product-settings-btn"
-                        onClick={e => openSettings(e, p)}
-                        title="商品を編集・削除"
-                      >⚙</button>
+                      {isAdmin && (
+                        <button
+                          className="product-settings-btn"
+                          onClick={e => openSettings(e, p)}
+                          title="商品を編集・削除"
+                        >⚙</button>
+                      )}
                       <span>{p.name}</span>
                     </div>
                   </td>
@@ -226,20 +229,28 @@ export default function TableView({
                       onSave={cat => onCategoryChange(p.id, cat)}
                       bulkMode={isCatBulk}
                       onBulkApply={() => onBulkCategoryApply(p.id)}
+                      disabled={!isAdmin}
                     />
                   </td>
 
                   {/* 入荷数 */}
                   <td className={`arrival-col-td${p.arrival === 0 ? ' zero' : ''}`}>
-                    <input
-                      className={`arrival-input${p.arrival === 0 ? ' zero' : ''}`}
-                      type="text"
-                      defaultValue={arrivalDisplay}
-                      key={arrivalDisplay}
-                      onBlur={e => onArrivalChange(p.id, e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                      title="クリックして編集"
-                    />
+                    {isAdmin ? (
+                      <input
+                        className={`arrival-input${p.arrival === 0 ? ' zero' : ''}`}
+                        type="text"
+                        defaultValue={arrivalDisplay}
+                        key={arrivalDisplay}
+                        onBlur={e => onArrivalChange(p.id, e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                        title="クリックして編集"
+                      />
+                    ) : (
+                      <span className={`arrival-input${p.arrival === 0 ? ' zero' : ''}`}
+                        style={{ display: 'block', textAlign: 'right', cursor: 'default' }}>
+                        {arrivalDisplay}
+                      </span>
+                    )}
                   </td>
 
                   {/* スケジュールセル */}
@@ -250,8 +261,9 @@ export default function TableView({
                         cellData={getCellData(p.id, i)}
                         onClick={onCellClick}
                         onMouseEnter={onTooltip} onMouseMove={onTooltipMove} onMouseLeave={onTooltipHide}
-                        variant="table" bulkEditActive={bulkStatusActive}
-                        onBulkMouseDown={onBulkDragStart}
+                        variant="table" bulkEditActive={bulkStatusActive && isAdmin}
+                        onBulkMouseDown={isAdmin ? onBulkDragStart : undefined}
+                        readOnly={!isAdmin}
                       />
                     </td>
                   ))}

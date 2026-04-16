@@ -9,11 +9,13 @@ interface CategoryInputProps {
   small?: boolean;
   bulkMode?: boolean;         // true のときはクリックで onBulkApply を呼ぶ
   onBulkApply?: () => void;
+  disabled?: boolean;
 }
 
 export default function CategoryInput({
   value, categories, onSave, small,
   bulkMode = false, onBulkApply,
+  disabled = false,
 }: CategoryInputProps) {
   const [editing, setEditing] = useState(false);
   const [input, setInput] = useState('');
@@ -52,6 +54,7 @@ export default function CategoryInput({
 
   function handleChipClick(e: React.MouseEvent) {
     e.stopPropagation();
+    if (disabled) return;
     if (bulkMode) {
       onBulkApply?.();
       return;

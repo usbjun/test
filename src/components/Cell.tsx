@@ -13,6 +13,7 @@ interface CellProps {
   monthLabel?: string;
   bulkEditActive?: boolean;
   onBulkMouseDown?: (pid: number, mi: number) => void;
+  readOnly?: boolean;
 }
 
 export default function Cell({
@@ -21,15 +22,20 @@ export default function Cell({
   variant = 'table', monthLabel = '',
   bulkEditActive = false,
   onBulkMouseDown,
+  readOnly = false,
 }: CellProps) {
   const hasData = cellData.arrival > 0 || cellData.sold > 0;
 
-  const handlers = bulkEditActive && onBulkMouseDown ? {
+  const handlers = !readOnly && bulkEditActive && onBulkMouseDown ? {
     onMouseDown: (e: React.MouseEvent) => {
       e.preventDefault();
       onBulkMouseDown(pid, mi);
     },
     onDragStart: (e: React.MouseEvent) => e.preventDefault(),
+    onMouseEnter: (e: React.MouseEvent) => onMouseEnter(pid, mi, e.clientX, e.clientY),
+    onMouseMove: (e: React.MouseEvent) => onMouseMove(e.clientX, e.clientY),
+    onMouseLeave,
+  } : readOnly ? {
     onMouseEnter: (e: React.MouseEvent) => onMouseEnter(pid, mi, e.clientX, e.clientY),
     onMouseMove: (e: React.MouseEvent) => onMouseMove(e.clientX, e.clientY),
     onMouseLeave,
@@ -79,8 +85,8 @@ export default function Cell({
     </span>
   );
   return (
-    <span className={`cell-empty-clickable${bulkClass}`} {...handlers} {...bulkAttrs}>
-      ＋{hasData && <span className="cell-data-dot" />}
+    <span className={readOnly ? 'cell-empty-readonly' : `cell-empty-clickable${bulkClass}`} {...handlers} {...bulkAttrs}>
+      {!readOnly && '＋'}{hasData && <span className="cell-data-dot" />}
     </span>
   );
 }

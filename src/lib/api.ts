@@ -28,6 +28,15 @@ function rowToProduct(row: {
 
 // ── READ ──────────────────────────────────────────────────────
 
+export async function fetchUserRole(): Promise<'admin' | 'viewer'> {
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('role')
+    .single();
+  if (error || !data) return 'viewer';
+  return data.role as 'admin' | 'viewer';
+}
+
 export async function fetchProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')

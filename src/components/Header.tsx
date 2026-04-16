@@ -1,6 +1,7 @@
 interface HeaderProps {
   skuCount: number;
   userEmail: string;
+  isAdmin: boolean;
   onLogout: () => void;
 }
 
@@ -11,7 +12,7 @@ const LEGEND_ITEMS = [
   { chip: '—', label: 'なし',                 bg: 'var(--none-bg)', color: 'var(--text-muted)', border: 'var(--border)' },
 ];
 
-export default function Header({ skuCount, userEmail, onLogout }: HeaderProps) {
+export default function Header({ skuCount, userEmail, isAdmin, onLogout }: HeaderProps) {
   return (
     <header>
       <div className="header-inner">
@@ -40,6 +41,12 @@ export default function Header({ skuCount, userEmail, onLogout }: HeaderProps) {
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>👤 {userEmail}</span>
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+              background: isAdmin ? 'var(--ok-bg)' : 'var(--surface3)',
+              color: isAdmin ? 'var(--ok)' : 'var(--text-muted)',
+              border: `1px solid ${isAdmin ? 'rgba(74,222,128,0.4)' : 'var(--border)'}`,
+            }}>{isAdmin ? '管理者' : '閲覧者'}</span>
             <button
               onClick={onLogout}
               style={{

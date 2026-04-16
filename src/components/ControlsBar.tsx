@@ -16,12 +16,14 @@ interface ControlsBarProps {
   onBulkEditToggle: () => void;
   onAddProduct: () => void;
   onExcelUpload: () => void;
+  isAdmin: boolean;
 }
 
 export default function ControlsBar({
   searchQuery, onSearch, statusFilter, onStatusFilter, counts,
   currentView, onViewChange, categories, categoryFilter, onCategoryFilter,
   sortBy, onSortBy, bulkStatusValue, bulkCategoryValue, onBulkEditToggle, onAddProduct, onExcelUpload,
+  isAdmin,
 }: ControlsBarProps) {
   const bulkActive = bulkStatusValue !== undefined || bulkCategoryValue !== undefined;
 
@@ -53,12 +55,14 @@ export default function ControlsBar({
         ))}
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button className="add-product-btn" onClick={onAddProduct}>＋ 商品追加</button>
-          <button className="excel-upload-btn" onClick={onExcelUpload}>📥 Excel</button>
-          <button
-            className={`filter-btn${bulkActive ? ' active' : ''}`}
-            onClick={onBulkEditToggle}
-          >✏️ 一括編集</button>
+          {isAdmin && <button className="add-product-btn" onClick={onAddProduct}>＋ 商品追加</button>}
+          {isAdmin && <button className="excel-upload-btn" onClick={onExcelUpload}>📥 Excel</button>}
+          {isAdmin && (
+            <button
+              className={`filter-btn${bulkActive ? ' active' : ''}`}
+              onClick={onBulkEditToggle}
+            >✏️ 一括編集</button>
+          )}
           <div className="view-toggle">
             <button className={`view-btn${currentView === 'table' ? ' active' : ''}`}
               onClick={() => onViewChange('table')} title="テーブル表示">⊞</button>

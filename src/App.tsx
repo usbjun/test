@@ -36,6 +36,7 @@ export default function App() {
   const [cellData, setCellData] = useState<CellDataMap>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // ── UI 状態 ─────────────────────────────────────────────────
   const [currentView, setCurrentView] = useState<ViewMode>('table');
@@ -92,8 +93,12 @@ export default function App() {
   useEffect(() => {
     if (!session) return;
     setLoading(true);
-    Promise.all([api.fetchProducts(), api.fetchCellData()])
-      .then(([prods, cells]) => { setProducts(prods); setCellData(cells); })
+    Promise.all([api.fetchProducts(), api.fetchCellData(), api.fetchUserRole()])
+      .then(([prods, cells, role]) => {
+        setProducts(prods);
+        setCellData(cells);
+        setIsAdmin(role === 'admin');
+      })
       .catch(e => setError(e instanceof Error ? e.message : '読み込みに失敗しました'))
       .finally(() => setLoading(false));
   }, [session]);
@@ -291,7 +296,7 @@ export default function App() {
 
   return (
     <div className="wrapper">
-      <Header skuCount={products.length} userEmail={session.user.email ?? ''} onLogout={signOut} />
+      <Header skuCount={products.length} userEmail={session.user.email ?? ''} isAdmin={isAdmin} onLogout={signOut} />
       <ControlsBar
         searchQuery={searchQuery} onSearch={setSearchQuery}
         statusFilter={statusFilter} onStatusFilter={setStatusFilter} counts={counts}
@@ -302,9 +307,10 @@ export default function App() {
         onBulkEditToggle={handleBulkEditToggle}
         onAddProduct={() => setShowAddModal(true)}
         onExcelUpload={() => setShowExcelModal(true)}
+        isAdmin={isAdmin}
       />
 
-      {bulkEditOpen && (
+      {isAdmin && bulkEditOpen && (
         <BulkEditBar
           bulkStatusValue={bulkStatusValue} onStatusChange={v => { setBulkStatusValue(v); setBulkCategoryValue(undefined); }}
           bulkCategoryValue={bulkCategoryValue} onCategoryChange={v => { setBulkCategoryValue(v); setBulkStatusValue(undefined); }}
@@ -335,6 +341,7 @@ export default function App() {
             onBulkDragStart={handleBulkDragStart}
             onReorder={handleReorder}
             sortBy={sortBy}
+            isAdmin={isAdmin}
           />
         ) : (
           <GridView
@@ -349,6 +356,7 @@ export default function App() {
             bulkCategoryValue={bulkCategoryValue}
             onBulkCategoryApply={handleBulkCategoryApply}
             onBulkDragStart={handleBulkDragStart}
+            isAdmin={isAdmin}
           />
         )}
       </main>

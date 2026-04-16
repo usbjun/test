@@ -19,6 +19,7 @@ interface GridViewProps {
   bulkCategoryValue: string | undefined;
   onBulkCategoryApply: (pid: number) => void;
   onBulkDragStart?: (pid: number, mi: number) => void;
+  isAdmin: boolean;
 }
 
 const PAIRS: [number, number][] = Array.from({ length: 13 }, (_, i) => [i * 2, i * 2 + 1]);
@@ -27,12 +28,13 @@ export default function GridView({
   products, allCategories, getCellData,
   onCellClick, onTooltip, onTooltipMove, onTooltipHide,
   onCategoryChange, bulkStatusActive, bulkCategoryValue, onBulkCategoryApply, onBulkDragStart,
+  isAdmin,
 }: GridViewProps) {
   if (products.length === 0) {
     return <div className="empty-state"><div className="icon">🔍</div><p>該当する商品が見つかりません</p></div>;
   }
 
-  const isCatBulk = bulkCategoryValue !== undefined;
+  const isCatBulk = bulkCategoryValue !== undefined && isAdmin;
 
   return (
     <div className="grid-view">
@@ -73,6 +75,7 @@ export default function GridView({
                     small
                     bulkMode={isCatBulk}
                     onBulkApply={() => onBulkCategoryApply(p.id)}
+                    disabled={!isAdmin}
                   />
                 </div>
               </div>
@@ -95,12 +98,14 @@ export default function GridView({
                       <div className="month-cell-label">{mNum}</div>
                       <Cell value={p.schedule[a]} pid={p.id} mi={a} cellData={getCellData(p.id, a)}
                         onClick={onCellClick} onMouseEnter={onTooltip} onMouseMove={onTooltipMove} onMouseLeave={onTooltipHide}
-                        variant="grid" monthLabel={MONTHS[a]} bulkEditActive={bulkStatusActive}
-                        onBulkMouseDown={onBulkDragStart} />
+                        variant="grid" monthLabel={MONTHS[a]} bulkEditActive={bulkStatusActive && isAdmin}
+                        onBulkMouseDown={isAdmin ? onBulkDragStart : undefined}
+                        readOnly={!isAdmin} />
                       <Cell value={p.schedule[b]} pid={p.id} mi={b} cellData={getCellData(p.id, b)}
                         onClick={onCellClick} onMouseEnter={onTooltip} onMouseMove={onTooltipMove} onMouseLeave={onTooltipHide}
-                        variant="grid" monthLabel={MONTHS[b]} bulkEditActive={bulkStatusActive}
-                        onBulkMouseDown={onBulkDragStart} />
+                        variant="grid" monthLabel={MONTHS[b]} bulkEditActive={bulkStatusActive && isAdmin}
+                        onBulkMouseDown={isAdmin ? onBulkDragStart : undefined}
+                        readOnly={!isAdmin} />
                     </div>
                   );
                 })}
