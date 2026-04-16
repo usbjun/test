@@ -31,29 +31,11 @@ function rowToProduct(row: {
 export async function fetchProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, category, arrival, schedule, sort_order, status')
+    .select('id, name, category, arrival, schedule, sort_order')
     .order('sort_order', { nullsFirst: false })
     .order('id');
   if (error) throw error;
-
-  const rows = data ?? [];
-  const products = rows.map(rowToProduct);
-
-  // マークから計算した status と DB の status がズレているものをバックグラウンドで修正
-  const toFix = rows.filter(row => {
-    const computed = computeStatus((row.schedule ?? []).slice(0, 26) as ScheduleValue[]);
-    return row.status !== computed;
-  });
-  if (toFix.length > 0) {
-    Promise.all(
-      toFix.map(row => {
-        const status = computeStatus((row.schedule ?? []).slice(0, 26) as ScheduleValue[]);
-        return supabase.from('products').update({ status }).eq('id', row.id);
-      })
-    ).catch(e => console.warn('status 自動修正に失敗:', e));
-  }
-
-  return products;
+  return (data ?? []).map(rowToProduct);
 }
 
 export async function fetchCellData(): Promise<CellDataMap> {
@@ -94,8 +76,7 @@ export async function updateArrival(id: number, arrival: number): Promise<void> 
 }
 
 export async function updateScheduleCell(id: number, schedule: ScheduleValue[]): Promise<void> {
-  const status = computeStatus(schedule);
-  const { error } = await supabase.from('products').update({ schedule, status }).eq('id', id);
+  const { error } = await supabase.from('products').update({ schedule }).eq('id', id);
   if (error) throw error;
 }
 
