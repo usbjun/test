@@ -3,6 +3,7 @@ import { MONTHS } from '../data/products';
 import Cell from './Cell';
 import CategoryInput from './CategoryInput';
 import { getCategoryColor } from '../lib/categoryColors';
+import { computeStatus } from '../lib/api';
 
 interface GridViewProps {
   products: Product[];
@@ -36,14 +37,15 @@ export default function GridView({
   return (
     <div className="grid-view">
       {products.map((p, ri) => {
-        const badgeClass = p.status === 'has' ? 'has' : p.status === 'incoming' ? 'incoming' : 'none';
-        const badgeText = p.status === 'has' ? '在庫あり' : p.status === 'incoming' ? '入荷予定' : '在庫なし';
+        const liveStatus = computeStatus(p.schedule);
+        const badgeClass = liveStatus === 'has' ? 'has' : liveStatus === 'incoming' ? 'incoming' : 'none';
+        const badgeText = liveStatus === 'has' ? '在庫あり' : liveStatus === 'incoming' ? '入荷予定' : '在庫なし';
         const catColor = p.category ? getCategoryColor(p.category, allCategories) : null;
 
         return (
           <div
             key={p.id}
-            className={`product-card ${p.status === 'has' ? 'has-stock' : 'no-stock'}${isCatBulk ? ' cat-bulk-target' : ''}`}
+            className={`product-card ${liveStatus === 'has' ? 'has-stock' : 'no-stock'}${isCatBulk ? ' cat-bulk-target' : ''}`}
             style={{ animationDelay: `${ri * 0.03}s` }}
             onClick={isCatBulk ? () => onBulkCategoryApply(p.id) : undefined}
             title={isCatBulk ? `クリックして「${bulkCategoryValue}」を適用` : undefined}

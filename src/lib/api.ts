@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { Product, CellDataMap, CellDataEntry, ScheduleValue, ProductStatus } from '../types';
 
-function computeStatus(schedule: ScheduleValue[]): ProductStatus {
+export function computeStatus(schedule: ScheduleValue[]): ProductStatus {
   const hasStock = schedule.some(v => v === '○');
   const hasIncoming = schedule.some(v => v === '?');
   const hasMaybe = schedule.some(v => v === '△') && !hasStock;

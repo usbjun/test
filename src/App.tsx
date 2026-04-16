@@ -5,6 +5,7 @@ import {
   PopupState, TooltipState, ScheduleValue, StatusFilter, ViewMode,
 } from './types';
 import * as api from './lib/api';
+import { computeStatus } from './lib/api';
 import { supabase } from './lib/supabase';
 import { signOut } from './lib/auth';
 import LoginPage from './components/LoginPage';
@@ -20,14 +21,6 @@ import BulkEditBar from './components/BulkEditBar';
 import AddProductModal from './components/AddProductModal';
 import ExcelUploadModal from './components/ExcelUploadModal';
 
-function computeStatus(schedule: ScheduleValue[]) {
-  const hasStock = schedule.some(v => v === '○');
-  const hasIncoming = schedule.some(v => v === '?');
-  const hasMaybe = schedule.some(v => v === '△') && !hasStock;
-  if (hasStock) return 'has' as const;
-  if (hasIncoming || hasMaybe) return 'incoming' as const;
-  return 'none' as const;
-}
 
 export default function App() {
   // ── 認証 ───────────────────────────────────────────────────
@@ -116,7 +109,7 @@ export default function App() {
   let filtered = products.filter(p => {
     const q = searchQuery.toLowerCase();
     if (q && !p.name.toLowerCase().includes(q)) return false;
-    if (statusFilter !== 'all' && p.status !== statusFilter) return false;
+    if (statusFilter !== 'all' && computeStatus(p.schedule) !== statusFilter) return false;
     if (categoryFilter !== 'all' && p.category !== categoryFilter) return false;
     if (monthFilter >= 0 && !p.schedule[monthFilter]) return false;
     return true;
@@ -137,9 +130,9 @@ export default function App() {
   });
   const counts = {
     all: countsBase.length,
-    has: countsBase.filter(p => p.status === 'has').length,
-    incoming: countsBase.filter(p => p.status === 'incoming').length,
-    none: countsBase.filter(p => p.status === 'none').length,
+    has: countsBase.filter(p => computeStatus(p.schedule) === 'has').length,
+    incoming: countsBase.filter(p => computeStatus(p.schedule) === 'incoming').length,
+    none: countsBase.filter(p => computeStatus(p.schedule) === 'none').length,
   };
 
   // ── CRUD ────────────────────────────────────────────────────
