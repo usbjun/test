@@ -1,4 +1,5 @@
 import { Product } from '../types';
+import { computeStatus } from '../lib/api';
 
 interface StatsRowProps {
   products: Product[];
@@ -6,8 +7,8 @@ interface StatsRowProps {
 
 export default function StatsRow({ products }: StatsRowProps) {
   const totalArrival = products.reduce((s, p) => s + p.arrival, 0);
-  const hasCount = products.filter(p => p.status === 'has').length;
-  const incomingCount = products.filter(p => p.status === 'incoming').length;
+  const hasCount = products.filter(p => computeStatus(p.schedule) === 'has').length;
+  const incomingCount = products.filter(p => computeStatus(p.schedule) === 'incoming').length;
 
   const stats = [
     { icon: '📦', value: products.length, label: '表示中の商品' },

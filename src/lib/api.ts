@@ -35,7 +35,14 @@ export async function fetchProducts(): Promise<Product[]> {
     .order('sort_order', { nullsFirst: false })
     .order('id');
   if (error) throw error;
-  return (data ?? []).map(rowToProduct);
+  const products = (data ?? []).map(rowToProduct);
+  // 診断: ○マークがあるのに status が 'has' でない商品をコンソールに出力
+  products.forEach(p => {
+    if (p.schedule.some(v => v === '○') && p.status !== 'has') {
+      console.warn('[不整合]', p.name, '\nschedule:', JSON.stringify(p.schedule));
+    }
+  });
+  return products;
 }
 
 export async function fetchCellData(): Promise<CellDataMap> {
