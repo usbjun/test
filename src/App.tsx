@@ -323,7 +323,7 @@ export default function App() {
 
       <main>
         <MonthFilter monthFilter={monthFilter} onMonthFilter={setMonthFilter} />
-        <StatsRow products={filtered} />
+        <StatsRow products={filtered} monthFilter={monthFilter} />
         {currentView === 'table' ? (
           <TableView
             products={filtered} allCategories={categories} monthFilter={monthFilter}

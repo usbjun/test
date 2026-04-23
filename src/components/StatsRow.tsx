@@ -3,11 +3,24 @@ import { computeStatus } from '../lib/api';
 
 interface StatsRowProps {
   products: Product[];
+  monthFilter: number;
 }
 
-export default function StatsRow({ products }: StatsRowProps) {
+// スケジュール配列の基準: index 0 = 2025年4月前半
+function getCurrentMonthIndex(): number {
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1-12
+  const year = now.getFullYear();
+  const half = now.getDate() > 15 ? 1 : 0;
+  const monthsFromRef = (year - 2025) * 12 + (month - 4);
+  if (monthsFromRef < 0) return 0;
+  return Math.min(monthsFromRef * 2 + half, 25);
+}
+
+export default function StatsRow({ products, monthFilter }: StatsRowProps) {
   const totalArrival = products.reduce((s, p) => s + p.arrival, 0);
-  const hasCount = products.filter(p => computeStatus(p.schedule) === 'has').length;
+  const targetIndex = monthFilter >= 0 ? monthFilter : getCurrentMonthIndex();
+  const hasCount = products.filter(p => p.schedule[targetIndex] === '○').length;
   const incomingCount = products.filter(p => computeStatus(p.schedule) === 'incoming').length;
 
   const stats = [
