@@ -16,7 +16,7 @@ export default function Header({ skuCount, userEmail, isAdmin, onLogout }: Heade
   return (
     <header>
       <div className="header-inner">
-        <div className="pokeball-icon" />
+        <img src="/logo.png" alt="ロゴ" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
         <div className="header-title">
           再入荷在庫管理
           <span>Restock Inventory Chart</span>

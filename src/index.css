@@ -72,35 +72,7 @@ header {
   gap: 20px;
   height: 48px;
 }
-.pokeball-icon {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(180deg, var(--red) 50%, #fff 50%);
-  border: 3px solid #fff;
-  position: relative;
-  flex-shrink: 0;
-  box-shadow: 0 0 16px rgba(227,53,13,0.25);
-}
-.pokeball-icon::before {
-  content: '';
-  position: absolute;
-  top: calc(50% - 1px); left: 50%;
-  transform: translate(-50%, -50%);
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid #333;
-  z-index: 2;
-}
-.pokeball-icon::after {
-  content: '';
-  position: absolute;
-  top: calc(50% - 2px);
-  left: 0; right: 0;
-  height: 3px;
-  background: #fff;
-  z-index: 1;
-}
+
 .header-title {
   font-family: 'M PLUS Rounded 1c', sans-serif;
   font-size: 16px;

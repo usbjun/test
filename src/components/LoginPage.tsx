@@ -23,15 +23,9 @@ export default function LoginPage() {
   return (
     <div style={styles.bg}>
       <div style={styles.card}>
-        {/* Pokeball */}
-        <div style={styles.pokeballWrap}>
-          <div style={styles.pokeball}>
-            <div style={styles.pokeballLine} />
-            <div style={styles.pokeballCenter} />
-          </div>
-        </div>
+        <img src="/logo.png" alt="ロゴ" style={{ width: 64, height: 64, objectFit: 'contain', marginBottom: 20 }} />
 
-        <h1 style={styles.title}>ポケモン 再入荷在庫管理</h1>
+        <h1 style={styles.title}>再入荷在庫管理表アプリ</h1>
         <p style={styles.sub}>社内専用システム — ログインが必要です</p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
@@ -93,25 +87,6 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 8px 40px rgba(0,0,0,0.10)',
     border: '1px solid #dde2ee',
     textAlign: 'center',
-  },
-  pokeballWrap: { display: 'flex', justifyContent: 'center', marginBottom: 20 },
-  pokeball: {
-    width: 56, height: 56, borderRadius: '50%',
-    background: 'linear-gradient(180deg, #E3350D 50%, #fff 50%)',
-    border: '4px solid #fff',
-    boxShadow: '0 0 0 3px #E3350D, 0 4px 16px rgba(227,53,13,0.3)',
-    position: 'relative',
-  },
-  pokeballLine: {
-    position: 'absolute', top: 'calc(50% - 2px)',
-    left: 0, right: 0, height: 4, background: '#E3350D',
-  },
-  pokeballCenter: {
-    position: 'absolute', top: '50%', left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: 14, height: 14, borderRadius: '50%',
-    background: '#fff', border: '3px solid #E3350D',
-    zIndex: 2,
   },
   title: {
     fontFamily: "'M PLUS Rounded 1c', sans-serif",
