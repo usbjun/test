@@ -29,9 +29,12 @@ function rowToProduct(row: {
 // ── READ ──────────────────────────────────────────────────────
 
 export async function fetchUserRole(): Promise<'admin' | 'viewer'> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 'viewer';
   const { data, error } = await supabase
-    .from('user_roles')
+    .from('profiles')
     .select('role')
+    .eq('id', user.id)
     .single();
   if (error || !data) return 'viewer';
   return data.role as 'admin' | 'viewer';
@@ -39,7 +42,7 @@ export async function fetchUserRole(): Promise<'admin' | 'viewer'> {
 
 export async function fetchProducts(): Promise<Product[]> {
   const { data, error } = await supabase
-    .from('products')
+    .from('inventory_products')
     .select('id, name, category, arrival, schedule, sort_order')
     .order('sort_order', { nullsFirst: false })
     .order('id');
@@ -72,11 +75,11 @@ export async function createProduct(name: string, category: string): Promise<Pro
   const emptySchedule: ScheduleValue[] = Array(26).fill(null);
   // 末尾に追加するため sort_order を最大値 + 1 に設定
   const { data: maxData } = await supabase
-    .from('products').select('sort_order').order('sort_order', { ascending: false }).limit(1);
+    .from('inventory_products').select('sort_order').order('sort_order', { ascending: false }).limit(1);
   const maxOrder = (maxData?.[0]?.sort_order ?? 0) + 1;
 
   const { data, error } = await supabase
-    .from('products')
+    .from('inventory_products')
     .insert({ name, category, arrival: 0, schedule: emptySchedule, sort_order: maxOrder })
     .select('id, name, category, arrival, schedule, sort_order')
     .single();
@@ -87,17 +90,17 @@ export async function createProduct(name: string, category: string): Promise<Pro
 // ── UPDATE ────────────────────────────────────────────────────
 
 export async function updateArrival(id: number, arrival: number): Promise<void> {
-  const { error } = await supabase.from('products').update({ arrival }).eq('id', id);
+  const { error } = await supabase.from('inventory_products').update({ arrival }).eq('id', id);
   if (error) throw error;
 }
 
 export async function updateScheduleCell(id: number, schedule: ScheduleValue[]): Promise<void> {
-  const { error } = await supabase.from('products').update({ schedule }).eq('id', id);
+  const { error } = await supabase.from('inventory_products').update({ schedule }).eq('id', id);
   if (error) throw error;
 }
 
 export async function updateCategory(id: number, category: string): Promise<void> {
-  const { error } = await supabase.from('products').update({ category }).eq('id', id);
+  const { error } = await supabase.from('inventory_products').update({ category }).eq('id', id);
   if (error) throw error;
 }
 
@@ -109,7 +112,7 @@ export async function reorderProducts(items: { id: number; sortOrder: number }[]
   if (error) {
     // フォールバック: 個別更新
     await Promise.all(items.map(({ id, sortOrder }) =>
-      supabase.from('products').update({ sort_order: sortOrder }).eq('id', id)
+      supabase.from('inventory_products').update({ sort_order: sortOrder }).eq('id', id)
     ));
   }
 }
@@ -132,7 +135,7 @@ export async function batchCreateProducts(
   rows: { name: string; category: string; arrival: number }[]
 ): Promise<Product[]> {
   const { data: maxData } = await supabase
-    .from('products').select('sort_order').order('sort_order', { ascending: false }).limit(1);
+    .from('inventory_products').select('sort_order').order('sort_order', { ascending: false }).limit(1);
   const baseOrder = (maxData?.[0]?.sort_order ?? 0) + 1;
   const emptySchedule: ScheduleValue[] = Array(26).fill(null);
 
@@ -145,7 +148,7 @@ export async function batchCreateProducts(
   }));
 
   const { data, error } = await supabase
-    .from('products')
+    .from('inventory_products')
     .insert(inserts)
     .select('id, name, category, arrival, schedule, sort_order');
   if (error) throw error;
@@ -153,11 +156,11 @@ export async function batchCreateProducts(
 }
 
 export async function updateProductName(id: number, name: string): Promise<void> {
-  const { error } = await supabase.from('products').update({ name }).eq('id', id);
+  const { error } = await supabase.from('inventory_products').update({ name }).eq('id', id);
   if (error) throw error;
 }
 
 export async function deleteProduct(id: number): Promise<void> {
-  const { error } = await supabase.from('products').delete().eq('id', id);
+  const { error } = await supabase.from('inventory_products').delete().eq('id', id);
   if (error) throw error;
 }
