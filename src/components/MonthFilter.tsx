@@ -1,11 +1,14 @@
-import { MONTHS, FY_GROUPS } from '../data/products';
+import { generateMonthLabel, generateFyGroups } from '../data/products';
 
 interface MonthFilterProps {
   monthFilter: number;
   onMonthFilter: (i: number) => void;
+  totalMonths: number;
 }
 
-export default function MonthFilter({ monthFilter, onMonthFilter }: MonthFilterProps) {
+export default function MonthFilter({ monthFilter, onMonthFilter, totalMonths }: MonthFilterProps) {
+  const fyGroups = generateFyGroups(totalMonths);
+
   return (
     <div className="month-filter">
       <button
@@ -13,7 +16,7 @@ export default function MonthFilter({ monthFilter, onMonthFilter }: MonthFilterP
         onClick={() => onMonthFilter(-1)}
       >全期間</button>
 
-      {FY_GROUPS.map(group => (
+      {fyGroups.map(group => (
         <span key={group.year}>
           <span className="month-tab year-label">{group.year}年度</span>
           {group.indices.map(i => (
@@ -21,7 +24,7 @@ export default function MonthFilter({ monthFilter, onMonthFilter }: MonthFilterP
               key={i}
               className={`month-tab${monthFilter === i ? ' active' : ''}`}
               onClick={() => onMonthFilter(i)}
-            >{MONTHS[i]}</button>
+            >{generateMonthLabel(i)}</button>
           ))}
         </span>
       ))}

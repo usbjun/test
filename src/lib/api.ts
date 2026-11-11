@@ -13,8 +13,10 @@ export function computeStatus(schedule: ScheduleValue[]): ProductStatus {
 function rowToProduct(row: {
   id: number; name: string; category: string;
   arrival: number; schedule: ScheduleValue[]; sort_order?: number;
-}): Product {
-  const schedule = (row.schedule ?? []).slice(0, 26) as ScheduleValue[];
+}, totalMonths: number): Product {
+  const raw = (row.schedule ?? []) as ScheduleValue[];
+  // 配列を totalMonths 長に正規化（短い場合は null で埋める）
+  const schedule: ScheduleValue[] = Array.from({ length: totalMonths }, (_, i) => raw[i] ?? null);
   return {
     id: row.id,
     name: row.name,
@@ -40,14 +42,25 @@ export async function fetchUserRole(): Promise<'admin' | 'viewer'> {
   return data.role as 'admin' | 'viewer';
 }
 
-export async function fetchProducts(): Promise<Product[]> {
+export async function fetchTotalMonths(): Promise<number> {
+  const { data, error } = await supabase
+    .from('app_config')
+    .select('value')
+    .eq('key', 'total_months')
+    .single();
+  if (error || !data) return 66; // テーブル未作成時のフォールバック
+  const v = Number(data.value);
+  return isNaN(v) ? 66 : v;
+}
+
+export async function fetchProducts(totalMonths: number): Promise<Product[]> {
   const { data, error } = await supabase
     .from('inventory_products')
     .select('id, name, category, arrival, schedule, sort_order')
     .order('sort_order', { nullsFirst: false })
     .order('id');
   if (error) throw error;
-  const products = (data ?? []).map(rowToProduct);
+  const products = (data ?? []).map(row => rowToProduct(row, totalMonths));
   // 診断: ○マークがあるのに status が 'has' でない商品をコンソールに出力
   products.forEach(p => {
     if (p.schedule.some(v => v === '○') && p.status !== 'has') {
@@ -71,8 +84,8 @@ export async function fetchCellData(): Promise<CellDataMap> {
 
 // ── CREATE ───────────────────────────────────────────────────
 
-export async function createProduct(name: string, category: string): Promise<Product> {
-  const emptySchedule: ScheduleValue[] = Array(26).fill(null);
+export async function createProduct(name: string, category: string, totalMonths: number): Promise<Product> {
+  const emptySchedule: ScheduleValue[] = Array(totalMonths).fill(null);
   // 末尾に追加するため sort_order を最大値 + 1 に設定
   const { data: maxData } = await supabase
     .from('inventory_products').select('sort_order').order('sort_order', { ascending: false }).limit(1);
@@ -84,7 +97,7 @@ export async function createProduct(name: string, category: string): Promise<Pro
     .select('id, name, category, arrival, schedule, sort_order')
     .single();
   if (error) throw error;
-  return rowToProduct(data);
+  return rowToProduct(data, totalMonths);
 }
 
 // ── UPDATE ────────────────────────────────────────────────────
@@ -132,12 +145,13 @@ export async function upsertCellData(
 }
 
 export async function batchCreateProducts(
-  rows: { name: string; category: string; arrival: number }[]
+  rows: { name: string; category: string; arrival: number }[],
+  totalMonths: number
 ): Promise<Product[]> {
   const { data: maxData } = await supabase
     .from('inventory_products').select('sort_order').order('sort_order', { ascending: false }).limit(1);
   const baseOrder = (maxData?.[0]?.sort_order ?? 0) + 1;
-  const emptySchedule: ScheduleValue[] = Array(26).fill(null);
+  const emptySchedule: ScheduleValue[] = Array(totalMonths).fill(null);
 
   const inserts = rows.map((r, i) => ({
     name: r.name,
@@ -152,7 +166,7 @@ export async function batchCreateProducts(
     .insert(inserts)
     .select('id, name, category, arrival, schedule, sort_order');
   if (error) throw error;
-  return (data ?? []).map(rowToProduct);
+  return (data ?? []).map(row => rowToProduct(row, totalMonths));
 }
 
 export async function updateProductName(id: number, name: string): Promise<void> {
@@ -163,4 +177,17 @@ export async function updateProductName(id: number, name: string): Promise<void>
 export async function deleteProduct(id: number): Promise<void> {
   const { error } = await supabase.from('inventory_products').delete().eq('id', id);
   if (error) throw error;
+}
+
+// ── APP CONFIG ─────────────────────────────────────────────────
+
+export async function addMonthPair(currentTotal: number): Promise<number> {
+  const MAX = 120;
+  if (currentTotal >= MAX) throw new Error('月の上限（120ヶ月）に達しました');
+  const newTotal = currentTotal + 2;
+  const { error } = await supabase
+    .from('app_config')
+    .upsert({ key: 'total_months', value: newTotal }, { onConflict: 'key' });
+  if (error) throw error;
+  return newTotal;
 }

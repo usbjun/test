@@ -346,6 +346,21 @@ thead .sticky-th {
   position: sticky;
   z-index: 10;
 }
+
+/* ── 横スクロール時の左固定列 ── */
+.sticky-left {
+  position: sticky;
+}
+thead th.sticky-left {
+  z-index: 20; /* 縦+横の両方が sticky: 他のヘッダーより手前 */
+}
+tbody td.sticky-left {
+  z-index: 2;
+  background: #fff;
+}
+tbody tr:hover td.sticky-left {
+  background: #f8faff; /* tbody tr:hover と同色 */
+}
 thead .year-th {
   top: 0;
   background: var(--surface3);
@@ -378,11 +393,6 @@ thead th.product-col {
   max-width: 350px;
   color: var(--text);
 }
-thead .month-row th.arrival-col,
-thead th.arrival-col {
-  min-width: 80px;
-  border-right: 2px solid var(--border);
-}
 tbody tr {
   border-bottom: 1px solid var(--border);
   transition: background 0.1s;
@@ -404,14 +414,6 @@ td.product-name {
   color: var(--text);
   line-height: 1.4;
 }
-td.arrival-col-td {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--blue);
-  border-right: 2px solid var(--border);
-}
-td.arrival-col-td.zero { color: var(--text-muted); }
-
 /* Cell markers */
 .cell-ok {
   display: inline-flex; align-items: center; justify-content: center;
@@ -470,24 +472,6 @@ td.arrival-col-td.zero { color: var(--text-muted); }
   display: block;
 }
 
-/* Arrival input */
-.arrival-input {
-  background: transparent;
-  border: none;
-  border-bottom: 1px dashed var(--border);
-  color: var(--blue);
-  font-size: 12px; font-weight: 700;
-  font-family: inherit; text-align: center;
-  width: 60px; outline: none; cursor: pointer;
-  transition: border-color 0.15s;
-}
-.arrival-input:focus {
-  border-bottom-color: var(--blue);
-  background: rgba(61,125,202,0.05);
-  border-radius: 4px 4px 0 0; cursor: text;
-}
-.arrival-input.zero { color: var(--text-muted); }
-
 /* Empty state */
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
 .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
@@ -531,8 +515,6 @@ td.arrival-col-td.zero { color: var(--text-muted); }
 .stock-badge.has { background: var(--ok-bg); color: var(--ok); border: 1px solid rgba(74,222,128,0.25); }
 .stock-badge.none { background: var(--none-bg); color: var(--text-muted); border: 1px solid var(--border); }
 .stock-badge.incoming { background: var(--unknown-bg); color: var(--unknown); border: 1px solid rgba(96,165,250,0.25); }
-.card-arrival-amount { font-size: 11px; color: var(--text-muted); margin-left: auto; }
-.card-arrival-amount strong { color: var(--yellow); font-size: 13px; }
 .card-schedule { padding: 10px 16px 14px; }
 .schedule-label {
   font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
@@ -721,6 +703,18 @@ td.arrival-col-td.zero { color: var(--text-muted); }
   white-space: nowrap;
 }
 .excel-upload-btn:hover { background: var(--surface3); }
+
+.add-month-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px; color: var(--text);
+  font-family: inherit; font-size: 13px;
+  font-weight: 700; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.add-month-btn:hover { background: var(--surface3); border-color: var(--blue); color: var(--blue); }
 
 /* ── 共通モーダル ── */
 .modal-overlay {

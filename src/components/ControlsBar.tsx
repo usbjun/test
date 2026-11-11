@@ -17,13 +17,16 @@ interface ControlsBarProps {
   onAddProduct: () => void;
   onExcelUpload: () => void;
   isAdmin: boolean;
+  totalMonths: number;
+  maxMonths: number;
+  onAddMonthPair: () => void;
 }
 
 export default function ControlsBar({
   searchQuery, onSearch, statusFilter, onStatusFilter, counts,
   currentView, onViewChange, categories, categoryFilter, onCategoryFilter,
   sortBy, onSortBy, bulkStatusValue, bulkCategoryValue, onBulkEditToggle, onAddProduct, onExcelUpload,
-  isAdmin,
+  isAdmin, totalMonths, maxMonths, onAddMonthPair,
 }: ControlsBarProps) {
   const bulkActive = bulkStatusValue !== undefined || bulkCategoryValue !== undefined;
 
@@ -57,6 +60,9 @@ export default function ControlsBar({
         <div className="controls-right" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           {isAdmin && <button className="add-product-btn" onClick={onAddProduct}>＋ 商品追加</button>}
           {isAdmin && <button className="excel-upload-btn" onClick={onExcelUpload}>📥 Excel</button>}
+          {isAdmin && totalMonths < maxMonths && (
+            <button className="add-month-btn" onClick={onAddMonthPair} title="前/後 1ペア（半月×2）を追加">＋ 月を追加</button>
+          )}
           {isAdmin && (
             <button
               className={`filter-btn${bulkActive ? ' active' : ''}`}

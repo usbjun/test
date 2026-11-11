@@ -18,7 +18,6 @@ function getCurrentMonthIndex(): number {
 }
 
 export default function StatsRow({ products, monthFilter }: StatsRowProps) {
-  const totalArrival = products.reduce((s, p) => s + p.arrival, 0);
   const targetIndex = monthFilter >= 0 ? monthFilter : getCurrentMonthIndex();
   const hasCount = products.filter(p => p.schedule[targetIndex] === '○').length;
   const incomingCount = products.filter(p => computeStatus(p.schedule) === 'incoming').length;
@@ -27,7 +26,6 @@ export default function StatsRow({ products, monthFilter }: StatsRowProps) {
     { icon: '📦', value: products.length, label: '表示中の商品' },
     { icon: '✅', value: hasCount, label: '在庫あり' },
     { icon: '🔜', value: incomingCount, label: '入荷予定あり' },
-    { icon: '🎁', value: totalArrival.toLocaleString(), label: '合計入荷数量' },
   ];
 
   return (

@@ -9,12 +9,12 @@ interface TableViewProps {
   products: Product[];
   allCategories: string[];
   monthFilter: number;
+  totalMonths: number;
   getCellData: (pid: number, mi: number) => CellDataEntry;
   onCellClick: (pid: number, mi: number, x: number, y: number) => void;
   onTooltip: (pid: number, mi: number, x: number, y: number) => void;
   onTooltipMove: (x: number, y: number) => void;
   onTooltipHide: () => void;
-  onArrivalChange: (pid: number, val: string) => void;
   onCategoryChange: (pid: number, category: string) => void;
   onRenameProduct: (pid: number, name: string) => void;
   onDeleteProduct: (pid: number) => void;
@@ -36,9 +36,9 @@ interface SettingsState {
 }
 
 export default function TableView({
-  products, allCategories, monthFilter,
+  products, allCategories, monthFilter, totalMonths,
   getCellData, onCellClick, onTooltip, onTooltipMove, onTooltipHide,
-  onArrivalChange, onCategoryChange, onRenameProduct, onDeleteProduct, onClearCells,
+  onCategoryChange, onRenameProduct, onDeleteProduct, onClearCells,
   bulkStatusActive, bulkCategoryValue, onBulkCategoryApply, onBulkDragStart,
   onReorder, sortBy, isAdmin,
 }: TableViewProps) {
@@ -81,10 +81,16 @@ export default function TableView({
     return <div className="empty-state"><div className="icon">🔍</div><p>該当する商品が見つかりません</p></div>;
   }
 
-  const monthsToShow = monthFilter >= 0 ? [monthFilter] : MONTHS.map((_, i) => i);
+  const monthsToShow = monthFilter >= 0
+    ? [monthFilter]
+    : Array.from({ length: totalMonths }, (_, i) => i);
   const yearSpans = getYearSpans(monthsToShow);
   const isDraggable = sortBy === 'default' && isAdmin;
   const isCatBulk = bulkCategoryValue !== undefined && isAdmin;
+
+  // 左固定列のオフセット（ドラッグハンドルの有無で変わる）
+  const nameLeft = isDraggable ? 28 : 0;
+  const catLeft  = isDraggable ? 288 : 260;
 
   // 月境界スタイル：年度境界は太線、月区切りは薄い細線
   const colBorder = (i: number): React.CSSProperties | undefined =>
@@ -128,10 +134,9 @@ export default function TableView({
         <table>
           <thead>
             <tr className="year-row">
-              {isDraggable && <th className="sticky-th year-th" style={{ width: 28 }} />}
-              <th className="sticky-th year-th" style={{ width: 260 }}>商品名</th>
-              <th className="sticky-th year-th" style={{ width: 120 }}>カテゴリ</th>
-              <th className="sticky-th year-th" style={{ width: 80 }}>入荷数</th>
+              {isDraggable && <th className="sticky-th year-th sticky-left" style={{ width: 28, left: 0 }} />}
+              <th className="sticky-th year-th sticky-left" style={{ width: 260, left: nameLeft }}>商品名</th>
+              <th className="sticky-th year-th sticky-left" style={{ width: 120, left: catLeft }}>カテゴリ</th>
               {yearSpans.map((span, i) => (
                 <th key={span.year} colSpan={span.count}
                   className="sticky-th year-th"
@@ -141,10 +146,9 @@ export default function TableView({
               ))}
             </tr>
             <tr className="month-row">
-              {isDraggable && <th className="sticky-th month-th" style={{ width: 28 }} />}
-              <th className="sticky-th month-th product-col">商品名</th>
-              <th className="sticky-th month-th" style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', minWidth: 110 }}>カテゴリ</th>
-              <th className="sticky-th month-th arrival-col">入荷数</th>
+              {isDraggable && <th className="sticky-th month-th sticky-left" style={{ width: 28, left: 0 }} />}
+              <th className="sticky-th month-th product-col sticky-left" style={{ left: nameLeft }}>商品名</th>
+              <th className="sticky-th month-th sticky-left" style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', minWidth: 110, left: catLeft }}>カテゴリ</th>
               {monthsToShow.map(i => (
                 <th key={i} className="sticky-th month-th" style={colBorder(i)}>
                   {MONTHS[i]}
@@ -154,7 +158,6 @@ export default function TableView({
           </thead>
           <tbody>
             {products.map((p, ri) => {
-              const arrivalDisplay = p.arrival > 0 ? p.arrival.toLocaleString() : '—';
               const isDragging = draggedId === p.id;
               const isOver = dragOverId === p.id;
               const nameClickable = isCatBulk;
@@ -193,7 +196,7 @@ export default function TableView({
                 >
                   {/* ドラッグハンドル */}
                   {isDraggable && (
-                    <td style={{ padding: 0, width: 28 }}>
+                    <td className="sticky-left" style={{ padding: 0, width: 28, left: 0 }}>
                       <div
                         className="drag-handle"
                         onMouseDown={() => { canDragId.current = p.id; }}
@@ -204,8 +207,11 @@ export default function TableView({
 
                   {/* 商品名 */}
                   <td
-                    className="product-name"
-                    style={nameClickable ? { cursor: 'pointer' } : undefined}
+                    className={`product-name sticky-left`}
+                    style={{
+                      left: nameLeft,
+                      ...(nameClickable ? { cursor: 'pointer' } : {}),
+                    }}
                     onClick={nameClickable ? () => onBulkCategoryApply(p.id) : undefined}
                     title={nameClickable ? `クリックして「${bulkCategoryValue}」を適用` : undefined}
                   >
@@ -222,7 +228,7 @@ export default function TableView({
                   </td>
 
                   {/* カテゴリ */}
-                  <td style={{ textAlign: 'center', padding: '4px 8px' }}>
+                  <td className="sticky-left" style={{ textAlign: 'center', padding: '4px 8px', left: catLeft }}>
                     <CategoryInput
                       value={p.category}
                       categories={allCategories}
@@ -231,26 +237,6 @@ export default function TableView({
                       onBulkApply={() => onBulkCategoryApply(p.id)}
                       disabled={!isAdmin}
                     />
-                  </td>
-
-                  {/* 入荷数 */}
-                  <td className={`arrival-col-td${p.arrival === 0 ? ' zero' : ''}`}>
-                    {isAdmin ? (
-                      <input
-                        className={`arrival-input${p.arrival === 0 ? ' zero' : ''}`}
-                        type="text"
-                        defaultValue={arrivalDisplay}
-                        key={arrivalDisplay}
-                        onBlur={e => onArrivalChange(p.id, e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                        title="クリックして編集"
-                      />
-                    ) : (
-                      <span className={`arrival-input${p.arrival === 0 ? ' zero' : ''}`}
-                        style={{ display: 'block', textAlign: 'right', cursor: 'default' }}>
-                        {arrivalDisplay}
-                      </span>
-                    )}
                   </td>
 
                   {/* スケジュールセル */}

@@ -1,35 +1,87 @@
-export const MONTHS = [
-  '4前','4後','5前','5後','6前','6後','7前','7後',
-  '8前','8後','9前','9後','10前','10後','11前','11後',
-  '12前','12後','1前','1後','2前','2後','3前','3後',
-  '4前(26)','4後(26)',
-];
+/** 月インデックスの上限（120 = 約10年分） */
+export const MAX_MONTHS = 120;
 
-// 5月始まり年度:
-//   4前・4後（April 2025）→ 2025年度（前年度末）
-//   5前 〜 4後(26)        → 2026年度
-export const FISCAL_YEARS = [
-  '2025','2025',                                           // Apr 2025
-  '2026','2026','2026','2026','2026','2026','2026','2026', // May–Aug 2025
-  '2026','2026','2026','2026','2026','2026','2026','2026', // Sep–Dec 2025
-  '2026','2026','2026','2026','2026','2026','2026','2026', // Jan–Apr 2026
-];
+/**
+ * インデックスからカレンダー年月を算出する内部ヘルパー。
+ * インデックス 0 = 2025年4月前半、1 = 2025年4月後半、2 = 2025年5月前半、…
+ */
+function indexToCalendar(index: number): { calYear: number; calMonth: number; half: '前' | '後' } {
+  const monthOffset = Math.floor(index / 2);
+  const calMonthIdx = (3 + monthOffset) % 12; // 0=1月, 3=4月
+  const calMonth = calMonthIdx + 1;
+  const calYear = 2025 + Math.floor((3 + monthOffset) / 12);
+  const half = index % 2 === 0 ? '前' : '後';
+  return { calYear, calMonth, half };
+}
 
-export const FY_GROUPS: { year: string; indices: number[] }[] = [
-  { year: '2025', indices: [0, 1] },
-  { year: '2026', indices: Array.from({ length: 24 }, (_, i) => i + 2) },
-];
+/**
+ * インデックスから表示ラベルを生成する。
+ * calYear > 2025 の場合は年を括弧で付加して重複を避ける。
+ * 例: 0→'4前', 2→'5前', 24→'4前(26)', 26→'5前(26)', 50→'5前(27)', 65→'12後(27)'
+ */
+export function generateMonthLabel(index: number): string {
+  const { calYear, calMonth, half } = indexToCalendar(index);
+  if (calYear > 2025) {
+    return `${calMonth}${half}(${calYear % 100})`;
+  }
+  return `${calMonth}${half}`;
+}
 
-/** テーブルヘッダー年度 span 情報を生成 */
-export function getYearSpans(monthsToShow: number[]) {
+/**
+ * インデックスから年度（会計年度: 5月始まり）を返す。
+ * 例: 0→'2025', 2→'2026', 26→'2027', 50→'2028'
+ */
+export function getFiscalYear(index: number): string {
+  const { calYear, calMonth } = indexToCalendar(index);
+  return String(calMonth >= 5 ? calYear + 1 : calYear);
+}
+
+/**
+ * 表示する月数を受け取り、年度ごとにグループ化した配列を返す。
+ * MonthFilter タブの動的生成に使用。
+ */
+export function generateFyGroups(totalMonths: number): { year: string; indices: number[] }[] {
+  const groups: { year: string; indices: number[] }[] = [];
+  for (let i = 0; i < totalMonths; i++) {
+    const yr = getFiscalYear(i);
+    const last = groups[groups.length - 1];
+    if (!last || last.year !== yr) {
+      groups.push({ year: yr, indices: [i] });
+    } else {
+      last.indices.push(i);
+    }
+  }
+  return groups;
+}
+
+/**
+ * 表示する月インデックス配列を受け取り、年度スパン情報を返す。
+ * テーブルヘッダーの年度 colspan 計算に使用。
+ */
+export function getYearSpans(monthsToShow: number[]): { year: string; count: number }[] {
   const spans: { year: string; count: number }[] = [];
   for (const i of monthsToShow) {
-    const yr = FISCAL_YEARS[i];
-    if (!spans.length || spans[spans.length - 1].year !== yr) {
+    const yr = getFiscalYear(i);
+    const last = spans[spans.length - 1];
+    if (!last || last.year !== yr) {
       spans.push({ year: yr, count: 1 });
     } else {
-      spans[spans.length - 1].count++;
+      last.count++;
     }
   }
   return spans;
 }
+
+// ── 後方互換エクスポート ──────────────────────────────────────
+// 既存コードが MONTHS[i] / FISCAL_YEARS[i] を参照しているため維持する。
+// インデックス 0〜MAX_MONTHS-1 まで事前計算。
+
+export const MONTHS: string[] = Array.from(
+  { length: MAX_MONTHS },
+  (_, i) => generateMonthLabel(i)
+);
+
+export const FISCAL_YEARS: string[] = Array.from(
+  { length: MAX_MONTHS },
+  (_, i) => getFiscalYear(i)
+);

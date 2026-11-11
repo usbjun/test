@@ -79,11 +79,6 @@ export default function GridView({
                   />
                 </div>
               </div>
-              {p.arrival > 0 && (
-                <div className="card-arrival-amount" style={{ marginTop: 4 }}>
-                  入荷数 <strong>{p.arrival.toLocaleString()}</strong>
-                </div>
-              )}
             </div>
             <div className="card-schedule" onClick={e => e.stopPropagation()}>
               <div className="schedule-label">

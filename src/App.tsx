@@ -20,6 +20,7 @@ import Tooltip from './components/Tooltip';
 import BulkEditBar from './components/BulkEditBar';
 import AddProductModal from './components/AddProductModal';
 import ExcelUploadModal from './components/ExcelUploadModal';
+import { MAX_MONTHS } from './data/products';
 
 
 export default function App() {
@@ -37,6 +38,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // ── 月数設定 ────────────────────────────────────────────────
+  const [totalMonths, setTotalMonths] = useState<number>(66);
 
   // ── UI 状態 ─────────────────────────────────────────────────
   const [currentView, setCurrentView] = useState<ViewMode>(
@@ -95,12 +99,14 @@ export default function App() {
   useEffect(() => {
     if (!session) return;
     setLoading(true);
-    Promise.all([api.fetchProducts(), api.fetchCellData(), api.fetchUserRole()])
-      .then(([prods, cells, role]) => {
-        setProducts(prods);
+    Promise.all([api.fetchTotalMonths(), api.fetchCellData(), api.fetchUserRole()])
+      .then(([tm, cells, role]) => {
+        setTotalMonths(tm);
         setCellData(cells);
         setIsAdmin(role === 'admin');
+        return api.fetchProducts(tm);
       })
+      .then(prods => setProducts(prods))
       .catch(e => setError(e instanceof Error ? e.message : '読み込みに失敗しました'))
       .finally(() => setLoading(false));
   }, [session]);
@@ -145,20 +151,24 @@ export default function App() {
   // ── CRUD ────────────────────────────────────────────────────
 
   async function handleAddProduct(name: string, category: string) {
-    const newProduct = await api.createProduct(name, category);
+    const newProduct = await api.createProduct(name, category, totalMonths);
     setProducts(prev => [...prev, newProduct]);
   }
 
   async function handleBatchUpload(rows: { name: string; category: string; arrival: number }[]) {
-    const newProducts = await api.batchCreateProducts(rows);
+    const newProducts = await api.batchCreateProducts(rows, totalMonths);
     setProducts(prev => [...prev, ...newProducts]);
   }
 
-  async function handleArrivalChange(pid: number, val: string) {
-    const arrival = parseInt(val.replace(/[,，—]/g, '').trim(), 10);
-    const n = isNaN(arrival) ? 0 : arrival;
-    setProducts(prev => prev.map(p => p.id === pid ? { ...p, arrival: n } : p));
-    api.updateArrival(pid, n).catch(() => alert('入荷数の保存に失敗しました'));
+  async function handleAddMonthPair() {
+    try {
+      const newTotal = await api.addMonthPair(totalMonths);
+      setTotalMonths(newTotal);
+      const prods = await api.fetchProducts(newTotal);
+      setProducts(prods);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '月の追加に失敗しました');
+    }
   }
 
   async function handleCategoryChange(pid: number, category: string) {
@@ -177,7 +187,7 @@ export default function App() {
   }
 
   async function handleClearCells(pid: number) {
-    const emptySchedule = Array(26).fill(null) as ScheduleValue[];
+    const emptySchedule = Array(totalMonths).fill(null) as ScheduleValue[];
     setProducts(prev => prev.map(p =>
       p.id === pid ? { ...p, schedule: emptySchedule, status: 'none' } : p
     ));
@@ -310,6 +320,9 @@ export default function App() {
         onAddProduct={() => setShowAddModal(true)}
         onExcelUpload={() => setShowExcelModal(true)}
         isAdmin={isAdmin}
+        totalMonths={totalMonths}
+        maxMonths={MAX_MONTHS}
+        onAddMonthPair={handleAddMonthPair}
       />
 
       {isAdmin && bulkEditOpen && (
@@ -322,17 +335,17 @@ export default function App() {
       )}
 
       <main>
-        <MonthFilter monthFilter={monthFilter} onMonthFilter={setMonthFilter} />
+        <MonthFilter monthFilter={monthFilter} onMonthFilter={setMonthFilter} totalMonths={totalMonths} />
         <StatsRow products={filtered} monthFilter={monthFilter} />
         {currentView === 'table' ? (
           <TableView
             products={filtered} allCategories={categories} monthFilter={monthFilter}
+            totalMonths={totalMonths}
             getCellData={getCellData}
             onCellClick={handleCellClick}
             onTooltip={(pid,mi,x,y) => { if (!bulkStatusValue) setTooltip({pid,mi,x,y}); }}
             onTooltipMove={(x,y) => setTooltip(prev => prev ? {...prev,x,y} : null)}
             onTooltipHide={() => setTooltip(null)}
-            onArrivalChange={handleArrivalChange}
             onCategoryChange={handleCategoryChange}
             onRenameProduct={handleRenameProduct}
             onDeleteProduct={handleDeleteProduct}
